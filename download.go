@@ -5,15 +5,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"image"
+	"github.com/discordapp/lilliput"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
-
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
 
 	_ "golang.org/x/image/webp"
 )
@@ -68,17 +64,32 @@ func initDownloading() {
 	}
 }
 
-func checkTypeAndDimensions(r io.Reader) (imageType, error) {
-	imgconf, imgtypeStr, err := image.DecodeConfig(r)
+func checkTypeAndDimensions(data []byte) (imageType, error) {
+	decoder, err := lilliput.NewDecoder(data)
+	if err != nil {
+		return UNKNOWN, err
+	}
+
+	defer decoder.Close()
+
+	header, err := decoder.Header()
+	if err != nil {
+		return UNKNOWN, errors.New("Error reading image header")
+	}
+
+	imgWidth := header.Width()
+	imgHeight := header.Height()
+	imgtypeStr := decoder.Description()
+
 	imgtype, imgtypeOk := imageTypes[imgtypeStr]
 
 	if err != nil {
 		return UNKNOWN, err
 	}
-	if imgconf.Width > conf.MaxSrcDimension || imgconf.Height > conf.MaxSrcDimension {
+	if imgWidth > conf.MaxSrcDimension || imgHeight > conf.MaxSrcDimension {
 		return UNKNOWN, errors.New("Source image is too big")
 	}
-	if imgconf.Width*imgconf.Height > conf.MaxSrcResolution {
+	if imgWidth*imgHeight > conf.MaxSrcResolution {
 		return UNKNOWN, errors.New("Source image is too big")
 	}
 	if !imgtypeOk {
@@ -91,16 +102,16 @@ func checkTypeAndDimensions(r io.Reader) (imageType, error) {
 func readAndCheckImage(res *http.Response) ([]byte, imageType, error) {
 	nr := newNetReader(res.Body)
 
-	imgtype, err := checkTypeAndDimensions(nr)
-	if err != nil {
-		return nil, UNKNOWN, err
-	}
-
 	if res.ContentLength > 0 {
 		nr.GrowBuf(int(res.ContentLength))
 	}
 
 	b, err := nr.ReadAll()
+
+	imgtype, err := checkTypeAndDimensions(b)
+	if err != nil {
+		return nil, UNKNOWN, err
+	}
 
 	return b, imgtype, err
 }

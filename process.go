@@ -1,12 +1,5 @@
 package main
 
-/*
-#cgo pkg-config: vips
-#cgo LDFLAGS: -s -w
-#include "vips.h"
-*/
-import "C"
-
 import (
 	"errors"
 	"github.com/discordapp/lilliput"
@@ -15,19 +8,27 @@ import (
 type imageType int
 
 const (
-	UNKNOWN = C.UNKNOWN
-	JPEG    = C.JPEG
-	PNG     = C.PNG
-	WEBP    = C.WEBP
-	GIF     = C.GIF
+	UNKNOWN imageType = iota
+	JPEG
+	PNG
+	WEBP
+	GIF
+	WEBM
+	MP4
+	MOV
+	OGG
 )
 
 var imageTypes = map[string]imageType{
-	"jpeg": JPEG,
-	"jpg":  JPEG,
-	"png":  PNG,
-	"webp": WEBP,
-	"gif":  GIF,
+	"JPG":  JPEG,
+	"JPEG": JPEG,
+	"PNG":  PNG,
+	"WEBP": WEBP,
+	"MP4":  MP4,
+	"MOV":  MOV,
+	"GIF":  GIF,
+	"WEBM": WEBM,
+	"OGG":  OGG,
 }
 
 var outputFileTypes = map[imageType]string{

@@ -1,6 +1,8 @@
-hash: 60e6c62171c0ccdba698ee1dee438c2215c6a70ba4f9fb1000046265e53370c3
-updated: 2018-03-15T22:32:53.486809+06:00
+hash: d0a20d9bce2b06a985882e07d3942bd4682375b80c7b743a7e118e5855c5f5ce
+updated: 2018-06-20T16:59:15.937385695Z
 imports:
+- name: github.com/discordapp/lilliput
+  version: e611eea2a29a12d1363b5ceb31d3af3ef4012e9c
 - name: github.com/matoous/go-nanoid
   version: 958d370425a1ea42a4dd3c67d15bf02554a16b82
 - name: golang.org/x/image
