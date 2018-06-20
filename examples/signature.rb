@@ -12,11 +12,10 @@ encoded_url = Base64.urlsafe_encode64(url).tr("=", "").scan(/.{1,16}/).join("/")
 resize = "fill"
 width = 300
 height = 300
-gravity = "no"
 enlarge = 1
 extension = "png"
 
-path = "/#{resize}/#{width}/#{height}/#{gravity}/#{enlarge}/#{encoded_url}.#{extension}"
+path = "/#{resize}/#{width}/#{height}/#{enlarge}/#{encoded_url}.#{extension}"
 
 digest = OpenSSL::Digest.new("sha256")
 # You can trim padding spaces to get good-looking url

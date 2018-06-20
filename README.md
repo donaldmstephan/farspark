@@ -173,7 +173,7 @@ You can also specify a secret to enable authorization with the HTTP `Authorizati
 The URL should contain the signature and resize parameters, like this:
 
 ```
-/%signature/%resizing_type/%width/%height/%gravity/%enlarge/%encoded_url.%extension
+/%signature/%resizing_type/%width/%height/%enlarge/%encoded_url.%extension
 ```
 
 #### Resizing types
@@ -187,17 +187,6 @@ imgproxy supports the following resizing types:
 #### Width and height
 
 Width and height parameters define the size of the resulting image. Depending on the resizing type applied, the dimensions may differ from the requested ones.
-
-#### Gravity
-
-When imgproxy needs to cut some parts of the image, it is guided by the gravity. The following values are supported:
-
-* `no` — north (top edge);
-* `so` — south (bottom edge);
-* `ea` — east (right edge);
-* `we` — west (left edge);
-* `ce` — center;
-* `sm` — smart. `libvips` detects the most "interesting" section of the image and considers it as the center of the resulting image.
 
 #### Enlarge
 
@@ -215,7 +204,7 @@ Extension specifies the format of the resulting image. At the moment, imgproxy s
 
 Signature is a URL-safe Base64-encoded HMAC digest of the rest of the path including the leading `/`. Here's how it is calculated:
 
-* Take the path after the signature — `/%resizing_type/%width/%height/%gravity/%enlarge/%encoded_url.%extension`;
+* Take the path after the signature — `/%resizing_type/%width/%height/%enlarge/%encoded_url.%extension`;
 * Add salt to the beginning;
 * Calculate the HMAC digest using SHA256;
 * Encode the result with URL-safe Base64.

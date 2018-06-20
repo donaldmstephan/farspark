@@ -27,14 +27,13 @@ func main() {
 	resize := "fill"
 	width := 300
 	height := 300
-	gravity := "no"
 	enlarge := 1
 	extension := "png"
 
 	url := "http://img.example.com/pretty/image.jpg"
 	encodedURL := base64.RawURLEncoding.EncodeToString([]byte(url))
 
-	path := fmt.Sprintf("/%s/%d/%d/%s/%d/%s.%s", resize, width, height, gravity, enlarge, encodedURL, extension)
+	path := fmt.Sprintf("/%s/%d/%d/%d/%s.%s", resize, width, height, enlarge, encodedURL, extension)
 
 	mac := hmac.New(sha256.New, keyBin)
 	mac.Write(saltBin)

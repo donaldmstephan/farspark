@@ -17,23 +17,22 @@ namespace ImgProxy.Examples
             const string Resize = "fill";
             const int Width = 300;
             const int Height = 300;
-            const string Gravity = "no";
             const int Enlarge = 1;
             const string Extension = "png";
 
-            var url = GenerateUrl(Key, Salt, Url, Resize, Width, Height, Gravity, Enlarge, Extension);
+            var url = GenerateUrl(Key, Salt, Url, Resize, Width, Height, Enlarge, Extension);
 
             Console.WriteLine(url);
         }
 
-        static string GenerateUrl(string key, string salt, string url, string resize, int width, int height, string gravity, int enlarge, string extension)
+        static string GenerateUrl(string key, string salt, string url, string resize, int width, int height, int enlarge, string extension)
         {
             var keybin = StringToByteArray(key);
             var saltBin = StringToByteArray(salt);
 
             var encodedUrl = string.Join("/", WholeChunks(Convert.ToBase64String(Encoding.UTF8.GetBytes(url)).TrimEnd('='), 16));
 
-            var path = $"/{resize}/{width}/{height}/{gravity}/{enlarge}/{encodedUrl}.{extension}";
+            var path = $"/{resize}/{width}/{height}/{enlarge}/{encodedUrl}.{extension}";
 
             using (var hmac = new HMACSHA256(keybin))
             {

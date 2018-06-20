@@ -38,7 +38,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 	path := r.URL.Path
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 
-	if len(parts) < 7 {
+	if len(parts) < 6 {
 		return "", po, errors.New("Invalid path")
 	}
 
@@ -62,10 +62,9 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, fmt.Errorf("Invalid height: %s", parts[3])
 	}
 
-	// TODO remove gravity
-	po.Enlarge = parts[5] != "0"
+	po.Enlarge = parts[4] != "0"
 
-	filenameParts := strings.Split(strings.Join(parts[6:], ""), ".")
+	filenameParts := strings.Split(strings.Join(parts[5:], ""), ".")
 
 	if len(filenameParts) < 2 {
 		po.Format = imageTypes["jpg"]

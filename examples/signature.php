@@ -16,14 +16,13 @@ if(empty($saltBin)) {
 $resize = 'fill';
 $width = 300;
 $height = 300;
-$gravity = 'no';
 $enlarge = 1;
 $extension = 'png';
 
 $url = 'http://img.example.com/pretty/image.jpg';
 $encodedUrl = rtrim(strtr(base64_encode($url), '+/', '-_'), '=');
 
-$path = sprintf("/%s/%d/%d/%s/%d/%s.%s", $resize, $width, $height, $gravity, $enlarge, $encodedUrl, $extension);
+$path = sprintf("/%s/%d/%d/%d/%s.%s", $resize, $width, $height, $enlarge, $encodedUrl, $extension);
 
 $signature = rtrim(strtr(base64_encode(hash_hmac('sha256', $saltBin.$path, $keyBin, true)), '+/', '-_'), '=');
 

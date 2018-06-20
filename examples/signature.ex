@@ -16,7 +16,6 @@ defmodule App.Imgproxy do
       opts.resize,
       to_string(opts.width),
       to_string(opts.height),
-      opts.gravity,
       to_string(opts.enlarge),
       Base.url_encode64(img_url, padding: false) <> "." <> opts.extension
     ])
@@ -33,5 +32,5 @@ end
 #
 # App.Imgproxy.build_url(
 #   "https://myawesomedomain.com/raw-image.png",
-#   %{resize: "fit", width: 1000, height: 400, gravity: "ce", enlarge: 0, extension: "jpg"}
+#   %{resize: "fit", width: 1000, height: 400, enlarge: 0, extension: "jpg"}
 # )
