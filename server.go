@@ -62,12 +62,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, fmt.Errorf("Invalid height: %s", parts[3])
 	}
 
-	if g, ok := gravityTypes[parts[4]]; ok {
-		po.Gravity = g
-	} else {
-		return "", po, fmt.Errorf("Invalid gravity: %s", parts[4])
-	}
-
+	// TODO remove gravity
 	po.Enlarge = parts[5] != "0"
 
 	filenameParts := strings.Split(strings.Join(parts[6:], ""), ".")
@@ -80,7 +75,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, fmt.Errorf("Invalid image format: %s", filenameParts[1])
 	}
 
-	if !vipsTypeSupportSave[po.Format] {
+	if !lilliputSupportSave[po.Format] {
 		return "", po, errors.New("Resulting image type not supported")
 	}
 

@@ -1,4 +1,4 @@
-package: github.com/DarthSim/imgproxy
+package: github.com/gfodor/imgproxy
 import:
 - package: gopkg.in/yaml.v2
 - package: golang.org/x/net

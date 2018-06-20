@@ -235,6 +235,5 @@ func init() {
 			fmt.Sprintf("%x", conf.ETagSignature))
 	}
 
-	initVips()
 	initDownloading()
 }

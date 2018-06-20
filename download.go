@@ -81,7 +81,7 @@ func checkTypeAndDimensions(r io.Reader) (imageType, error) {
 	if imgconf.Width*imgconf.Height > conf.MaxSrcResolution {
 		return UNKNOWN, errors.New("Source image is too big")
 	}
-	if !imgtypeOk || !vipsTypeSupportLoad[imgtype] {
+	if !imgtypeOk {
 		return UNKNOWN, errors.New("Source image type not supported")
 	}
 

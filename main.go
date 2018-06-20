@@ -41,6 +41,5 @@ func main() {
 
 	<-stop
 
-	shutdownVips()
 	shutdownServer(s)
 }
