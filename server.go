@@ -100,11 +100,24 @@ func logResponse(status int, msg string) {
 	log.Printf("|\033[7;%dm %d \033[0m| %s\n", color, status, msg)
 }
 
-func writeCORS(rw http.ResponseWriter) {
-	if len(conf.AllowOrigin) > 0 {
-		rw.Header().Set("Access-Control-Allow-Origin", conf.AllowOrigin)
-		rw.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONs")
+func writeCORS(r *http.Request, rw http.ResponseWriter) {
+	origin := r.Header.Get("origin")
+
+	if len(conf.AllowOrigins) == 0 || len(origin) == 0 {
+		return
 	}
+
+	allowedOrigin := "null"
+
+	for _, nextOrigin := range conf.AllowOrigins {
+		if nextOrigin == origin {
+			rw.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			allowedOrigin = origin
+			break
+		}
+	}
+
+	rw.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 }
 
 func respondWithImage(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, imgURL string, po processingOptions, duration time.Duration) {
@@ -178,7 +191,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[%s] %s: %s\n", reqID, r.Method, r.URL.RequestURI())
 
-	writeCORS(rw)
+	writeCORS(r, rw)
 
 	if r.Method == http.MethodOptions {
 		respondWithOptions(reqID, rw)

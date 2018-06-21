@@ -11,6 +11,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 func intEnvConfig(i *int, name string) {
@@ -28,6 +29,14 @@ func megaIntEnvConfig(f *int, name string) {
 func strEnvConfig(s *string, name string) {
 	if env := os.Getenv(name); len(env) > 0 {
 		*s = env
+	}
+}
+
+func strSliceEnvConfig(s *[]string, name string) {
+	if env := os.Getenv(name); len(env) > 0 {
+		*s = strings.Split(env, ",")
+	} else {
+		*s = make([]string, 0)
 	}
 }
 
@@ -95,7 +104,7 @@ type config struct {
 
 	Secret string
 
-	AllowOrigin string
+	AllowOrigins []string
 
 	LocalFileSystemRoot string
 
@@ -151,7 +160,7 @@ func init() {
 
 	strEnvConfig(&conf.Secret, "IMGPROXY_SECRET")
 
-	strEnvConfig(&conf.AllowOrigin, "IMGPROXY_ALLOW_ORIGIN")
+	strSliceEnvConfig(&conf.AllowOrigins, "IMGPROXY_ALLOW_ORIGINS")
 
 	strEnvConfig(&conf.LocalFileSystemRoot, "IMGPROXY_LOCAL_FILESYSTEM_ROOT")
 
