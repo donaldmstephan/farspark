@@ -83,6 +83,7 @@ type processingOptions struct {
 
 type OutputBuffer struct {
 	buf []byte
+	ops *lilliput.ImageOps
 }
 
 var outputBufferPool = make(chan *OutputBuffer, conf.Concurrency)
@@ -106,9 +107,6 @@ func processImage(data []byte, imgtype imageType, po processingOptions, t *timer
 
 	t.Check()
 
-	ops := lilliput.NewImageOps(8192)
-	defer ops.Close()
-
 	var outputBuffer *OutputBuffer
 
 	select {
@@ -116,11 +114,17 @@ func processImage(data []byte, imgtype imageType, po processingOptions, t *timer
 	default:
 		outputBuffer = &OutputBuffer{
 			buf: make([]byte, 50*1024*1024),
+			ops: lilliput.NewImageOps(8192),
 		}
 	}
 
-	defer func() { outputBufferPool <- outputBuffer }()
+	ops := outputBuffer.ops
 	outputImg := outputBuffer.buf
+
+	defer func() {
+		ops.Clear()
+		outputBufferPool <- outputBuffer
+	}()
 
 	imageResizeOp := resizeOpSizeMethods[po.Resize]
 
