@@ -51,14 +51,30 @@ var lilliputSupportSave = map[imageType]bool{
 	WEBP: true,
 }
 
-var resizeTypes = map[string]lilliput.ImageOpsSizeMethod{
-	"fit":  lilliput.ImageOpsFit,
-	"fill": lilliput.ImageOpsResize,
-	"crop": lilliput.ImageOpsNoResize,
+type resizeType int
+
+const (
+	Fit resizeType = iota
+	Fill
+	None
+	Raw
+)
+
+var resizeTypes = map[string]resizeType{
+	"fit":  Fit,
+	"fill": Fill,
+	"none": None,
+	"raw":  Raw,
+}
+
+var resizeOpSizeMethods = map[resizeType]lilliput.ImageOpsSizeMethod{
+	Fit:  lilliput.ImageOpsFit,
+	Fill: lilliput.ImageOpsResize,
+	None: lilliput.ImageOpsNoResize,
 }
 
 type processingOptions struct {
-	Resize  lilliput.ImageOpsSizeMethod
+	Resize  resizeType
 	Width   int
 	Height  int
 	Enlarge bool
@@ -88,9 +104,10 @@ func processImage(data []byte, imgtype imageType, po processingOptions, t *timer
 	defer ops.Close()
 
 	outputImg := make([]byte, 50*1024*1024)
+	imageResizeOp := resizeOpSizeMethods[po.Resize]
 
 	// Ensure we won't crop out of bounds
-	if !po.Enlarge || po.Resize == lilliput.ImageOpsNoResize {
+	if !po.Enlarge || imageResizeOp == lilliput.ImageOpsNoResize {
 		if imgWidth < po.Width {
 			po.Width = imgWidth
 		}
@@ -104,7 +121,7 @@ func processImage(data []byte, imgtype imageType, po processingOptions, t *timer
 		FileType:             outputFileTypes[po.Format],
 		Width:                po.Width,
 		Height:               po.Height,
-		ResizeMethod:         po.Resize,
+		ResizeMethod:         imageResizeOp,
 		NormalizeOrientation: true,
 		EncodeOptions:        EncodeOptions[po.Format],
 	}
