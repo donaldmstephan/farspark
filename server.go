@@ -149,7 +149,7 @@ func respondWithImage(reqID string, r *http.Request, rw http.ResponseWriter, dat
 	logResponse(200, fmt.Sprintf("[%s] Processed in %s: %s; %+v", reqID, duration, imgURL, po))
 }
 
-func respondWithError(reqID string, rw http.ResponseWriter, err imgproxyError) {
+func respondWithError(reqID string, rw http.ResponseWriter, err farsparkError) {
 	logResponse(err.StatusCode, fmt.Sprintf("[%s] %s", reqID, err.Message))
 
 	rw.WriteHeader(err.StatusCode)
@@ -181,7 +181,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			if err, ok := r.(imgproxyError); ok {
+			if err, ok := r.(farsparkError); ok {
 				respondWithError(reqID, rw, err)
 			} else {
 				respondWithError(reqID, rw, newUnexpectedError(r.(error), 4))
@@ -211,7 +211,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path == "/health" {
 		rw.WriteHeader(200)
-		rw.Write([]byte("imgproxy is running"))
+		rw.Write([]byte("farspark is running"))
 		return
 	}
 

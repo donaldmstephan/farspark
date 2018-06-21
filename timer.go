@@ -23,7 +23,7 @@ func (t *timer) Check() {
 	}
 }
 
-func (t *timer) TimeoutErr() imgproxyError {
+func (t *timer) TimeoutErr() farsparkError {
 	return newError(503, fmt.Sprintf("Timeout after %v", t.Since()), "Timeout")
 }
 
