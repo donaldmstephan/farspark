@@ -118,6 +118,8 @@ func processImage(data []byte, imgtype imageType, po processingOptions, t *timer
 		}
 	}
 
+	t.Check()
+
 	ops := outputBuffer.ops
 	outputImg := outputBuffer.buf
 
