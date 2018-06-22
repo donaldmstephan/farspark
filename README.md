@@ -173,9 +173,7 @@ There is a special endpoint `/health`, which returns HTTP Status `200 OK` after 
 
 ## Author
 
-Sergey "DarthSim" Aleksandrovich
-
-Many thanks to @romashamin for the awesome logo.
+imgproxy by Sergey "DarthSim" Aleksandrovich
 
 ## License
 
