@@ -127,7 +127,7 @@ farspark supports the following resizing types:
 
 * `fit` — resizes the image while keeping aspect ratio to fit given size;
 * `fill` — resizes the image while keeping aspect ratio to fill given size and cropping projecting parts;
-* `crop` — crops the image to a given size.
+* `raw` — performs no processing and transfers the media through as-is
 
 #### Width and height
 

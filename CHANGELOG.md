@@ -1,3 +1,9 @@
+## v1.2
+
+- Added support for multiple CORS origins
+- Switched from vips to lilliput for images
+- Added "raw" mode which does not image processing
+
 ## v1.1.5.1
 
 - Fixed autorotation when image is not resized
