@@ -3,23 +3,23 @@
 set -e
 exec 2>&1
 
-FARSPARK_BIND=
-FARSPARK_READ_TIMEOUT=
-FARSPARK_WRITE_TIMEOUT=
-FARSPARK_DOWNLOAD_TIMEOUT=
-FARSPARK_CONCURRENCY=
-FARSPARK_MAX_CLIENTS=
-FARSPARK_TTL=
-FARSPARK_MAX_SRC_DIMENSION=
-FARSPARK_MAX_SRC_RESOLUTION=
-FARSPARK_QUALITY=
-FARSPARK_GZIP_COMPRESSION=
-FARSPARK_KEY=
-FARSPARK_SALT=
-FARSPARK_SECRET=
-FARSPARK_ALLOW_ORIGINS=
-FARSPARK_LOCAL_FILESYSTEM_ROOT=
-FARSPARK_USE_ETAG=
-FARSPARK_BASE_URL=
+FARSPARK_KEY={{ cfg.signature.key }}
+FARSPARK_SALT={{ cfg.signature.salt }}
+FARSPARK_BIND={{ cfg.server.bind }}
+FARSPARK_READ_TIMEOUT={{ cfg.server.read_timeout }}
+FARSPARK_WRITE_TIMEOUT={{ cfg.server.write_timeout }}
+FARSPARK_DOWNLOAD_TIMEOUT={{ cfg.server.download_timeout }}
+FARSPARK_CONCURRENCY={{ cfg.server.concurrency }}
+FARSPARK_MAX_CLIENTS={{ cfg.server.max_client }}
+FARSPARK_TTL={{ cfg.server.ttl }}
+FARSPARK_USE_ETAG={{ cfg.server.use_etag }}
+FARSPARK_LOCAL_FILESYSTEM_ROOT={{ cfg.server.local_filesystem_root }}
+FARSPARK_MAX_SRC_DIMENSION={{ cfg.security.max_src_dimension  }}
+FARSPARK_MAX_SRC_RESOLUTION={{ cfg.security.max_src_resolution }}
+FARSPARK_QUALITY={{ cfg.compression.quality }}
+FARSPARK_GZIP_COMPRESSION={{ cfg.compression.gzip_compression }}
+FARSPARK_SECRET={{ cfg.security.secret }}
+FARSPARK_ALLOW_ORIGINS={{ cfg.security.allow_origins }}
+FARSPARK_BASE_URL={{ cfg.misc.base_url }}
 
 exec farspark
