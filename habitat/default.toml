@@ -1,32 +1,32 @@
 [signature]
 
-key =
-salt =
+key = ""
+salt = ""
 
 [server]
 
-bind =
-read_timeout =
-write_timeout =
-download_timeout =
-concurrency =
-max_clients =
-ttl =
-use_etag =
-local_filesystem_root =
+bind = ""
+read_timeout = ""
+write_timeout = ""
+download_timeout = ""
+concurrency = ""
+max_clients = ""
+ttl = ""
+use_etag = ""
+local_filesystem_root = ""
 
 [security]
 
-allow_origins =
-max_src_dimension =
-max_src_resolution =
-secret =
+allow_origins = ""
+max_src_dimension = ""
+max_src_resolution = ""
+secret = ""
 
 [compression]
 
-quality =
-gzip_compression =
+quality = ""
+gzip_compression = ""
 
 [misc]
 
-base_url =
+base_url = ""
