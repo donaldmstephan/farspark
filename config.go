@@ -137,36 +137,36 @@ func init() {
 		conf.Bind = fmt.Sprintf(":%s", port)
 	}
 
-	strEnvConfig(&conf.Bind, "IMGPROXY_BIND")
-	intEnvConfig(&conf.ReadTimeout, "IMGPROXY_READ_TIMEOUT")
-	intEnvConfig(&conf.WriteTimeout, "IMGPROXY_WRITE_TIMEOUT")
-	intEnvConfig(&conf.DownloadTimeout, "IMGPROXY_DOWNLOAD_TIMEOUT")
-	intEnvConfig(&conf.Concurrency, "IMGPROXY_CONCURRENCY")
-	intEnvConfig(&conf.MaxClients, "IMGPROXY_MAX_CLIENTS")
+	strEnvConfig(&conf.Bind, "FARSPARK_BIND")
+	intEnvConfig(&conf.ReadTimeout, "FARSPARK_READ_TIMEOUT")
+	intEnvConfig(&conf.WriteTimeout, "FARSPARK_WRITE_TIMEOUT")
+	intEnvConfig(&conf.DownloadTimeout, "FARSPARK_DOWNLOAD_TIMEOUT")
+	intEnvConfig(&conf.Concurrency, "FARSPARK_CONCURRENCY")
+	intEnvConfig(&conf.MaxClients, "FARSPARK_MAX_CLIENTS")
 
-	intEnvConfig(&conf.TTL, "IMGPROXY_TTL")
+	intEnvConfig(&conf.TTL, "FARSPARK_TTL")
 
-	intEnvConfig(&conf.MaxSrcDimension, "IMGPROXY_MAX_SRC_DIMENSION")
-	megaIntEnvConfig(&conf.MaxSrcResolution, "IMGPROXY_MAX_SRC_RESOLUTION")
+	intEnvConfig(&conf.MaxSrcDimension, "FARSPARK_MAX_SRC_DIMENSION")
+	megaIntEnvConfig(&conf.MaxSrcResolution, "FARSPARK_MAX_SRC_RESOLUTION")
 
-	intEnvConfig(&conf.Quality, "IMGPROXY_QUALITY")
-	intEnvConfig(&conf.GZipCompression, "IMGPROXY_GZIP_COMPRESSION")
+	intEnvConfig(&conf.Quality, "FARSPARK_QUALITY")
+	intEnvConfig(&conf.GZipCompression, "FARSPARK_GZIP_COMPRESSION")
 
-	hexEnvConfig(&conf.Key, "IMGPROXY_KEY")
-	hexEnvConfig(&conf.Salt, "IMGPROXY_SALT")
+	hexEnvConfig(&conf.Key, "FARSPARK_KEY")
+	hexEnvConfig(&conf.Salt, "FARSPARK_SALT")
 
 	hexFileConfig(&conf.Key, *keypath)
 	hexFileConfig(&conf.Salt, *saltpath)
 
-	strEnvConfig(&conf.Secret, "IMGPROXY_SECRET")
+	strEnvConfig(&conf.Secret, "FARSPARK_SECRET")
 
-	strSliceEnvConfig(&conf.AllowOrigins, "IMGPROXY_ALLOW_ORIGINS")
+	strSliceEnvConfig(&conf.AllowOrigins, "FARSPARK_ALLOW_ORIGINS")
 
-	strEnvConfig(&conf.LocalFileSystemRoot, "IMGPROXY_LOCAL_FILESYSTEM_ROOT")
+	strEnvConfig(&conf.LocalFileSystemRoot, "FARSPARK_LOCAL_FILESYSTEM_ROOT")
 
-	boolEnvConfig(&conf.ETagEnabled, "IMGPROXY_USE_ETAG")
+	boolEnvConfig(&conf.ETagEnabled, "FARSPARK_USE_ETAG")
 
-	strEnvConfig(&conf.BaseURL, "IMGPROXY_BASE_URL")
+	strEnvConfig(&conf.BaseURL, "FARSPARK_BASE_URL")
 
 	if len(conf.Key) == 0 {
 		log.Fatalln("Key is not defined")
@@ -233,7 +233,7 @@ func init() {
 			}
 		}
 		if conf.LocalFileSystemRoot == "/" {
-			log.Print("Exposing root via IMGPROXY_LOCAL_FILESYSTEM_ROOT is unsafe")
+			log.Print("Exposing root via FARSPARK_LOCAL_FILESYSTEM_ROOT is unsafe")
 		}
 	}
 
