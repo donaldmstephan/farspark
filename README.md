@@ -1,6 +1,6 @@
 # farspark
 
-farspark is a fast and secure standalone server, based on [imgproxy](https://github.com/DarthSim/imgproxy) for resizing, converting, and proxying remote media. The main principles of are simplicity, speed, and security. farspark is used with [hubs](https://github.com/mozilla/hubs) in order to proxy and convert shared media assets such as images, videos, and GLTF assets.
+farspark is a fast and secure standalone server, based on [imgproxy](https://github.com/DarthSim/imgproxy), for resizing, converting, and proxying remote media. The main principles of are simplicity, speed, and security. farspark is used with [hubs](https://github.com/mozilla/hubs) in order to proxy and convert shared media assets such as images, videos, and GLTF assets.
 
 farspark can be used to provide a fast and secure way to replace all the image resizing code of your web application (like calling ImageMagick or GraphicsMagick, or using libraries), while also being able to resize everything on the fly, fast and easy. farspark is also indispensable when handling lots of image resizing, especially when images come from a remote source. farspark also has the ability to add CORS headers, so proxied images can be read by your application (which is important if you are trying to, for example, draw them to a WebGL texture.)
 
