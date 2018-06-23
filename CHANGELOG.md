@@ -1,3 +1,7 @@
+## v1.2.1
+
+- Added streaming of raw type
+
 ## v1.2
 
 - Added support for multiple CORS origins

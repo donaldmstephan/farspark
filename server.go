@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -226,32 +227,42 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		panic(newError(404, err.Error(), "Invalid image url"))
 	}
 
-	b, imgtype, err := downloadImage(imgURL)
-	if err != nil {
-		panic(newError(404, err.Error(), "Image is unreachable"))
-	}
-
-	t.Check()
-
-	if conf.ETagEnabled {
-		eTag := calcETag(b, &procOpt)
-		rw.Header().Set("ETag", eTag)
-
-		if eTag == r.Header.Get("If-None-Match") {
-			panic(notModifiedErr)
-		}
-	}
-
-	t.Check()
-
 	if procOpt.Resize != Raw {
+		b, imgtype, err := downloadImage(imgURL)
+		if err != nil {
+			panic(newError(404, err.Error(), "Image is unreachable"))
+		}
+
+		t.Check()
+
+		if conf.ETagEnabled {
+			eTag := calcETag(b, &procOpt)
+			rw.Header().Set("ETag", eTag)
+
+			if eTag == r.Header.Get("If-None-Match") {
+				panic(notModifiedErr)
+			}
+		}
+
+		t.Check()
+
 		b, err = processImage(b, imgtype, procOpt, t)
 		if err != nil {
 			panic(newError(500, err.Error(), "Error occurred while processing image"))
 		}
 
 		t.Check()
-	}
 
-	respondWithImage(reqID, r, rw, b, imgURL, procOpt, t.Since())
+		respondWithImage(reqID, r, rw, b, imgURL, procOpt, t.Since())
+	} else {
+		body, err := streamImage(imgURL)
+
+		if err != nil {
+			panic(newError(500, err.Error(), "Error occurred while streaming media"))
+		}
+
+		defer body.Close()
+		rw.WriteHeader(200)
+		io.Copy(rw, body)
+	}
 }

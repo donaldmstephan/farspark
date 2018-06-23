@@ -132,3 +132,21 @@ func downloadImage(url string) ([]byte, imageType, error) {
 
 	return readAndCheckImage(res)
 }
+
+func streamImage(url string) (io.ReadCloser, error) {
+	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
+
+	res, err := downloadClient.Get(fullURL)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != 200 {
+		body, _ := ioutil.ReadAll(res.Body)
+		defer res.Body.Close()
+
+		return nil, fmt.Errorf("Can't stream image; Status: %d; %s", res.StatusCode, string(body))
+	}
+
+	return res.Body, nil
+}
