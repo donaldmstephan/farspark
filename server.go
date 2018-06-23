@@ -177,6 +177,14 @@ func (h *httpHandler) unlock() {
 	<-h.sem
 }
 
+func copyHeader(dst, src http.Header) {
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
+		}
+	}
+}
+
 func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	reqID, _ := nanoid.Nanoid()
 
@@ -191,8 +199,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}()
 
 	log.Printf("[%s] %s: %s\n", reqID, r.Method, r.URL.RequestURI())
-
-	writeCORS(r, rw)
 
 	if r.Method == http.MethodOptions {
 		respondWithOptions(reqID, rw)
@@ -216,8 +222,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
-
 	imgURL, procOpt, err := parsePath(r)
 	if err != nil {
 		panic(newError(404, err.Error(), "Invalid image url"))
@@ -228,6 +232,8 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if procOpt.Resize != Raw {
+		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
+
 		b, imgtype, err := downloadImage(imgURL)
 		if err != nil {
 			panic(newError(404, err.Error(), "Image is unreachable"))
@@ -253,16 +259,23 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 		t.Check()
 
+		writeCORS(r, rw)
+
 		respondWithImage(reqID, r, rw, b, imgURL, procOpt, t.Since())
 	} else {
-		body, err := streamImage(imgURL)
+		res, err := streamImage(imgURL, r)
 
 		if err != nil {
 			panic(newError(500, err.Error(), "Error occurred while streaming media"))
 		}
 
+		body := res.Body
 		defer body.Close()
-		rw.WriteHeader(200)
+		copyHeader(rw.Header(), res.Header)
+		rw.WriteHeader(res.StatusCode)
+
+		writeCORS(r, rw)
+
 		io.Copy(rw, body)
 	}
 }

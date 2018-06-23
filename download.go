@@ -133,20 +133,33 @@ func downloadImage(url string) ([]byte, imageType, error) {
 	return readAndCheckImage(res)
 }
 
-func streamImage(url string) (io.ReadCloser, error) {
+func streamImage(url string, incomingRequest *http.Request) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
 
-	res, err := downloadClient.Get(fullURL)
+	outgoingRequest, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if res.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(res.Body)
-		defer res.Body.Close()
-
-		return nil, fmt.Errorf("Can't stream image; Status: %d; %s", res.StatusCode, string(body))
+	for headerName, headerValue := range incomingRequest.Header {
+		for _, v := range headerValue {
+			if headerName == "Range" {
+				outgoingRequest.Header.Add(headerName, v)
+				fmt.Printf("Jump to range %s", v)
+			}
+		}
 	}
 
-	return res.Body, nil
+	res, err := downloadClient.Do(outgoingRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		defer res.Body.Close()
+
+		return nil, fmt.Errorf("Can't stream media; Status: %d", res.StatusCode)
+	}
+
+	return res, nil
 }
