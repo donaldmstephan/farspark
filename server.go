@@ -179,6 +179,10 @@ func (h *httpHandler) unlock() {
 
 func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
+		if k == "set-cookie" || k == "set-cookie2" {
+			continue
+		}
+
 		for _, v := range vv {
 			dst.Add(k, v)
 		}
@@ -272,9 +276,9 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		body := res.Body
 		defer body.Close()
 		copyHeader(rw.Header(), res.Header)
-		rw.WriteHeader(res.StatusCode)
-
 		writeCORS(r, rw)
+
+		rw.WriteHeader(res.StatusCode)
 
 		io.Copy(rw, body)
 	}

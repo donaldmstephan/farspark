@@ -145,7 +145,6 @@ func streamImage(url string, incomingRequest *http.Request) (*http.Response, err
 		for _, v := range headerValue {
 			if headerName == "Range" {
 				outgoingRequest.Header.Add(headerName, v)
-				fmt.Printf("Jump to range %s", v)
 			}
 		}
 	}
