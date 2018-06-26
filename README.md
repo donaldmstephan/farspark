@@ -1,6 +1,6 @@
 # farspark
 
-farspark is a fast and secure standalone server, based on [imgproxy](https://github.com/DarthSim/imgproxy) for resizing, converting, and proxying remote media. The main principles of are simplicity, speed, and security. farspark is used with [hubs](https://github.com/mozilla/hubs) in order to proxy and convert shared media assets such as images, videos, and GLTF assets.
+farspark is a fast and secure standalone server, based on [imgproxy](https://github.com/DarthSim/imgproxy), for resizing, converting, and proxying remote media. The main principles of are simplicity, speed, and security. farspark is used with [hubs](https://github.com/mozilla/hubs) in order to proxy and convert shared media assets such as images, videos, and GLTF assets.
 
 farspark can be used to provide a fast and secure way to replace all the image resizing code of your web application (like calling ImageMagick or GraphicsMagick, or using libraries), while also being able to resize everything on the fly, fast and easy. farspark is also indispensable when handling lots of image resizing, especially when images come from a remote source. farspark also has the ability to add CORS headers, so proxied images can be read by your application (which is important if you are trying to, for example, draw them to a WebGL texture.)
 
@@ -96,7 +96,7 @@ $ xxd -g 2 -l 64 -p /dev/random | tr -d '\n'
 
 farspark protects you from so-called image bombs. Here is how you can specify maximum image dimensions and resolution which you consider reasonable:
 
-* `FARSPARK_ALLOW_ORIGIN` - when set, enables CORS headers with provided origin. CORS headers are disabled by default.
+* `FARSPARK_ALLOW_ORIGINS` - when set, enables CORS headers with provided list of comma-separated origins. CORS headers are disabled by default.
 * `FARSPARK_MAX_SRC_DIMENSION` — the maximum dimensions of the source image, in pixels, for both width and height. Images with larger real size will be rejected. Default: `8192`;
 * `FARSPARK_MAX_SRC_RESOLUTION` — the maximum resolution of the source image, in megapixels. Images with larger real size will be rejected. Default: `16.8`;
 
@@ -127,7 +127,7 @@ farspark supports the following resizing types:
 
 * `fit` — resizes the image while keeping aspect ratio to fit given size;
 * `fill` — resizes the image while keeping aspect ratio to fill given size and cropping projecting parts;
-* `raw` — performs no processing and transfers the media through as-is
+* `raw` — performs no processing and streams the media through as-is (for example, this can be used to simply add CORS headers.)
 
 #### Width and height
 
