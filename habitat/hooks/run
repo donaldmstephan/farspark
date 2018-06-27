@@ -21,7 +21,12 @@ export FARSPARK_GZIP_COMPRESSION={{ cfg.compression.gzip_compression }}
 export FARSPARK_SECRET={{ cfg.security.secret }}
 export FARSPARK_ALLOW_ORIGINS={{ cfg.security.allow_origins }}
 export FARSPARK_BASE_URL={{ cfg.misc.base_url }}
-export FARSPARK_CACHE_ROOT={{ cfg.misc.cache_root }}
 export FARSPARK_CACHE_SIZE={{ cfg.misc.cache_size }}
+
+{{ #if cfg.misc.cache_root }}
+export FARSPARK_CACHE_ROOT={{ cfg.misc.cache_root }}
+{{ else }}
+export FARSPARK_CACHE_ROOT={{ pkg.svc_var_path }}
+{{ /if }}
 
 exec farspark
