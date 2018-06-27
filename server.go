@@ -65,7 +65,11 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 
 	po.Enlarge = parts[4] != "0"
 
-	filenameParts := strings.Split(strings.Join(parts[5:], ""), ".")
+	if po.Index, err = strconv.Atoi(parts[5]); err != nil {
+		return "", po, fmt.Errorf("Invalid index: %s", parts[5])
+	}
+
+	filenameParts := strings.Split(strings.Join(parts[6:], ""), ".")
 
 	if len(filenameParts) < 2 {
 		po.Format = imageTypes["JPG"]
@@ -236,11 +240,36 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if procOpt.Resize != Raw {
+		var b []byte = nil
+		var maxIndex int
+		var imgtype imageType = UNKNOWN
+
 		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 
-		b, imgtype, err := downloadImage(imgURL)
-		if err != nil {
-			panic(newError(404, err.Error(), "Image is unreachable"))
+		contentsKey := getIndexContentsCacheKey(imgURL, procOpt.Index)
+
+		// Optimization: use the local page contents cache and skip download if possible
+		if farsparkCache != nil && farsparkCache.Has(contentsKey) {
+			outData, contentErr := farsparkCache.Read(contentsKey)
+			maxIndexBytes, maxIndexErr := farsparkCache.Read(getMaxIndexCacheKey(imgURL))
+			maxIndexParsed, maxIndexParseErr := strconv.Atoi(string(maxIndexBytes))
+
+			if contentErr == nil && maxIndexErr == nil && maxIndexParseErr == nil {
+				b = outData
+				imgtype = PNG
+				maxIndex = maxIndexParsed
+			}
+		}
+
+		if b == nil {
+			downloadBytes, downloadImageType, err := downloadImage(imgURL)
+
+			if err != nil {
+				panic(newError(404, err.Error(), "Image is unreachable"))
+			}
+
+			b = downloadBytes
+			imgtype = downloadImageType
 		}
 
 		t.Check()
@@ -256,14 +285,26 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 		t.Check()
 
-		b, err = processImage(b, imgtype, procOpt, t)
+		processedBytes, processedMaxIndex, err := processImage(b, imgURL, imgtype, procOpt, t)
+
 		if err != nil {
 			panic(newError(500, err.Error(), "Error occurred while processing image"))
+		}
+
+		b = processedBytes
+
+		if processedMaxIndex > maxIndex {
+			maxIndex = processedMaxIndex
 		}
 
 		t.Check()
 
 		writeCORS(r, rw)
+
+		if maxIndex > 0 {
+			rw.Header().Set("X-Content-Index", strconv.Itoa(procOpt.Index))
+			rw.Header().Set("X-Max-Content-Index", strconv.Itoa(maxIndex))
+		}
 
 		respondWithImage(reqID, r, rw, b, imgURL, procOpt, t.Since())
 	} else {

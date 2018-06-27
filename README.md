@@ -112,13 +112,15 @@ You can also specify a secret to enable authorization with the HTTP `Authorizati
 #### Miscellaneous
 
 * `FARSPARK_BASE_URL` - base URL part which will be added to every requestsd image URL. For example, if base URL is `http://example.com/images` and `/path/to/image.png` is requested, farspark will download the image from `http://example.com/images/path/to/image.png`. Default: blank.
+* `FARSPARK_CACHE_ROOT` - Root folder for filesystem cache used to speed up frame/page extraction across requests
+* `FARSPARK_CACHE_SIZE` - Size (in bytes) for the filesystem cache
 
 ## Generating the URL
 
 The URL should contain the signature and resize parameters, like this:
 
 ```
-/%signature/%resizing_type/%width/%height/%enlarge/%encoded_url.%extension
+/%signature/%resizing_type/%width/%height/%enlarge/%index/%encoded_url.%extension
 ```
 
 #### Resizing types
@@ -127,6 +129,7 @@ farspark supports the following resizing types:
 
 * `fit` — resizes the image while keeping aspect ratio to fit given size;
 * `fill` — resizes the image while keeping aspect ratio to fill given size and cropping projecting parts;
+* `none` — does not perform any resizing, but extracts a single page or frame from the media as an image (for example, useful for video or PDFs)
 * `raw` — performs no processing and streams the media through as-is (for example, this can be used to simply add CORS headers.)
 
 #### Width and height
@@ -136,6 +139,10 @@ Width and height parameters define the size of the resulting image. Depending on
 #### Enlarge
 
 If set to `0`, farspark will not enlarge the image if it is smaller than the given size. With any other value, farspark will enlarge the image.
+
+#### Index
+
+If the media being requested has multiple pages or frames, you can request to render a specific one. (Right now this is only supported for PDFs, but video frames should be possible eventually.) The page/frame index starts at zero, and media which has multiple pages will include an `X-Max-Content-Index` header to indicate the maximum index that can be requested.
 
 #### Encoded URL
 

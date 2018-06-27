@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"github.com/peterbourgon/diskv"
 	"io/ioutil"
 	"log"
 	"os"
@@ -108,6 +109,9 @@ type config struct {
 
 	LocalFileSystemRoot string
 
+	CacheRoot string
+	CacheSize int
+
 	ETagEnabled   bool
 	ETagSignature []byte
 
@@ -126,6 +130,20 @@ var conf = config{
 	Quality:          80,
 	GZipCompression:  5,
 	ETagEnabled:      false,
+}
+
+var farsparkCache *diskv.Diskv
+
+func initCache() {
+	if conf.CacheSize > 0 {
+		farsparkCache = diskv.New(diskv.Options{
+			BasePath:     conf.CacheRoot,
+			Transform:    func(s string) []string { return []string{} },
+			CacheSizeMax: uint64(conf.CacheSize),
+		})
+	} else {
+		farsparkCache = nil
+	}
 }
 
 func init() {
@@ -163,6 +181,9 @@ func init() {
 	strSliceEnvConfig(&conf.AllowOrigins, "FARSPARK_ALLOW_ORIGINS")
 
 	strEnvConfig(&conf.LocalFileSystemRoot, "FARSPARK_LOCAL_FILESYSTEM_ROOT")
+
+	strEnvConfig(&conf.CacheRoot, "FARSPARK_CACHE_ROOT")
+	intEnvConfig(&conf.CacheSize, "FARSPARK_CACHE_SIZE")
 
 	boolEnvConfig(&conf.ETagEnabled, "FARSPARK_USE_ETAG")
 
@@ -245,4 +266,5 @@ func init() {
 	}
 
 	initDownloading()
+	initCache()
 }

@@ -1,3 +1,7 @@
+## v1.3
+
+- Added PDF extraction and indexing
+
 ## v1.2.1
 
 - Added streaming of raw type

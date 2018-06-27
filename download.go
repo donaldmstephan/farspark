@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/discordapp/lilliput"
@@ -65,6 +67,12 @@ func initDownloading() {
 }
 
 func checkTypeAndDimensions(data []byte) (imageType, error) {
+	contentType := http.DetectContentType(data)
+
+	if contentType == "application/pdf" {
+		return PDF, nil
+	}
+
 	decoder, err := lilliput.NewDecoder(data)
 	if err != nil {
 		return UNKNOWN, err
@@ -99,15 +107,7 @@ func checkTypeAndDimensions(data []byte) (imageType, error) {
 	return imgtype, nil
 }
 
-func readAndCheckImage(res *http.Response) ([]byte, imageType, error) {
-	nr := newNetReader(res.Body)
-
-	if res.ContentLength > 0 {
-		nr.GrowBuf(int(res.ContentLength))
-	}
-
-	b, err := nr.ReadAll()
-
+func readAndCheckImageBytes(b []byte) ([]byte, imageType, error) {
 	imgtype, err := checkTypeAndDimensions(b)
 	if err != nil {
 		return nil, UNKNOWN, err
@@ -116,27 +116,72 @@ func readAndCheckImage(res *http.Response) ([]byte, imageType, error) {
 	return b, imgtype, err
 }
 
-func downloadImage(url string) ([]byte, imageType, error) {
-	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
+func readAndCheckImageResponse(res *http.Response) ([]byte, imageType, error) {
+	nr := newNetReader(res.Body)
 
-	res, err := downloadClient.Get(fullURL)
+	if res.ContentLength > 0 {
+		nr.GrowBuf(int(res.ContentLength))
+	}
+
+	b, err := nr.ReadAll()
 	if err != nil {
 		return nil, UNKNOWN, err
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		body, _ := ioutil.ReadAll(res.Body)
-		return nil, UNKNOWN, fmt.Errorf("Can't download image; Status: %d; %s", res.StatusCode, string(body))
+	return readAndCheckImageBytes(b)
+}
+
+func shouldCacheImageType(t imageType) bool {
+	// For now, just cache PDF files locally since we re-fetch new pages over and over,
+	// and they tend to be big files
+	if t == PDF {
+		return true
 	}
 
-	return readAndCheckImage(res)
+	return false
+}
+
+func downloadImage(url string) ([]byte, imageType, error) {
+	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
+	sha256 := sha256.New()
+	sha256.Write([]byte(fullURL))
+	sha256.Write([]byte("src"))
+	srcCacheKey := base64.URLEncoding.EncodeToString(sha256.Sum(nil))
+
+	if farsparkCache != nil && farsparkCache.Has(srcCacheKey) {
+		bytes, err := farsparkCache.Read(srcCacheKey)
+		if err != nil {
+			return nil, UNKNOWN, err
+		}
+
+		return readAndCheckImageBytes(bytes)
+	} else {
+		res, err := downloadClient.Get(fullURL)
+		if err != nil {
+			return nil, UNKNOWN, err
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != 200 {
+			body, _ := ioutil.ReadAll(res.Body)
+			return nil, UNKNOWN, fmt.Errorf("Can't download image; Status: %d; %s", res.StatusCode, string(body))
+		}
+
+		bytes, imageType, err := readAndCheckImageResponse(res)
+
+		if err == nil && shouldCacheImageType(imageType) && farsparkCache != nil {
+			farsparkCache.Write(srcCacheKey, bytes)
+		}
+
+		return bytes, imageType, err
+	}
 }
 
 func streamImage(url string, incomingRequest *http.Request) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
 
 	outgoingRequest, err := http.NewRequest("GET", fullURL, nil)
+
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,20 @@
-hash: d0a20d9bce2b06a985882e07d3942bd4682375b80c7b743a7e118e5855c5f5ce
-updated: 2018-06-20T16:59:15.937385695Z
+hash: 7240021a02eb8877fb45e6fe4636ef74453c2e0beaf59e3415cc49255263fa80
+updated: 2018-06-27T00:47:09.984152891Z
 imports:
 - name: github.com/discordapp/lilliput
   version: e611eea2a29a12d1363b5ceb31d3af3ef4012e9c
+- name: github.com/gfodor/go-ghostscript
+  version: 8648f5db343bf62db895270e114d098fa1685949
+  subpackages:
+  - ghostscript
+- name: github.com/google/btree
+  version: e89373fe6b4a7413d7acd6da1725b83ef713e6e4
 - name: github.com/matoous/go-nanoid
   version: 958d370425a1ea42a4dd3c67d15bf02554a16b82
+- name: github.com/peterbourgon/diskv
+  version: 0646ccaebea1ed1539efcab30cae44019090093f
+- name: github.com/rsc/pdf
+  version: c47d69cf462f804ff58ca63c61a8fb2aed76587e
 - name: golang.org/x/image
   version: 334384d9e19178a0488c9360d94d183c1ef0f711
   subpackages:

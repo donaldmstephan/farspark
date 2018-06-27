@@ -1,8 +1,17 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/discordapp/lilliput"
+	"github.com/gfodor/go-ghostscript/ghostscript"
+	"github.com/rsc/pdf"
+	"io/ioutil"
+	"os"
+	"strconv"
+	"sync"
 )
 
 type imageType int
@@ -17,6 +26,7 @@ const (
 	MP4
 	MOV
 	OGG
+	PDF
 )
 
 var imageTypes = map[string]imageType{
@@ -29,6 +39,7 @@ var imageTypes = map[string]imageType{
 	"GIF":  GIF,
 	"WEBM": WEBM,
 	"OGG":  OGG,
+	"PDF":  PDF,
 }
 
 var outputFileTypes = map[imageType]string{
@@ -79,6 +90,7 @@ type processingOptions struct {
 	Height  int
 	Enlarge bool
 	Format  imageType
+	Index   int
 }
 
 type OutputBuffer struct {
@@ -87,19 +99,133 @@ type OutputBuffer struct {
 }
 
 var outputBufferPool = make(chan *OutputBuffer, conf.Concurrency)
+var gsMutex = &sync.Mutex{}
+var gs *ghostscript.Ghostscript = nil
 
-func processImage(data []byte, imgtype imageType, po processingOptions, t *timer) ([]byte, error) {
+func getIndexCacheKey(url string, index int, suffix string) string {
+	sha256 := sha256.New()
+	sha256.Write([]byte(url))
+	sha256.Write([]byte(fmt.Sprintf("%d", index)))
+	sha256.Write([]byte(suffix))
+	return base64.URLEncoding.EncodeToString(sha256.Sum(nil))
+}
+
+func getIndexContentsCacheKey(url string, index int) string {
+	return getIndexCacheKey(url, index, "contents")
+}
+
+func getMaxIndexCacheKey(url string) string {
+	return getIndexCacheKey(url, 0, "max_index")
+}
+
+func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
+	scratchDir, err := ioutil.TempDir("", "farspark-scratch")
+
+	if err != nil {
+		return nil, 0, errors.New("Error creating scratch dir")
+	}
+
+	defer os.RemoveAll(scratchDir)
+
+	inFile := fmt.Sprintf("%s/in.pdf", scratchDir)
+	outFile := fmt.Sprintf("%s/out.png", scratchDir)
+
+	if err := ioutil.WriteFile(inFile, data, 0600); err != nil {
+		return nil, 0, errors.New("Error writing temporary PDF file")
+	}
+
+	gsMutex.Lock()
+
+	if gs == nil {
+		_, err = ghostscript.GetRevision()
+
+		if err != nil {
+			gsMutex.Unlock()
+			return nil, 0, errors.New("Missing dependency libgs")
+		}
+
+		gsPtr, err := ghostscript.NewInstance()
+		if err != nil {
+			gsMutex.Unlock()
+			return nil, 0, errors.New("Failed to init Ghostscript")
+		}
+
+		gs = gsPtr
+	}
+
+	args := []string{
+		"gs",
+		"-sDEVICE=pngalpha",
+		fmt.Sprintf("-sOutputFile=%s", outFile),
+		fmt.Sprintf("-dFirstPage=%d", index+1),
+		fmt.Sprintf("-dLastPage=%d", index+1),
+		"-dNOPAUSE",
+		"-r144",
+		inFile,
+	}
+
+	if err := gs.Init(args); err != nil {
+		gsMutex.Unlock()
+
+		return nil, 0, errors.New("Failed to run Ghostscript")
+	}
+
+	gs.Exit()
+	gsMutex.Unlock()
+
+	pdfInst, _ := pdf.Open(inFile)
+	if err != nil {
+		return nil, 0, errors.New("Failed to read PDF for paging")
+	}
+
+	maxIndex := pdfInst.NumPage() - 1
+
+	outFilePtr, err := os.Open(outFile)
+	defer outFilePtr.Close()
+
+	if err != nil {
+		return nil, 0, errors.New("Failed to read PDF frame")
+	}
+
+	outBytes, err := ioutil.ReadAll(outFilePtr)
+
+	if err == nil && farsparkCache != nil {
+		contentsCacheKey := getIndexContentsCacheKey(url, index)
+		maxIndexCacheKey := getMaxIndexCacheKey(url)
+
+		farsparkCache.Write(contentsCacheKey, outBytes)
+		farsparkCache.Write(maxIndexCacheKey, []byte(strconv.Itoa(maxIndex)))
+	}
+
+	return outBytes, maxIndex, err
+}
+
+func processImage(data []byte, url string, imgtype imageType, po processingOptions, t *timer) ([]byte, int, error) {
 	defer keepAlive(data)
+
+	var imageData = data
+	var maxIndex = 1
+
+	if imgtype == PDF {
+		pdfImageData, extractedPageCount, err := extractPDFPage(data, url, po.Index)
+
+		if err != nil {
+			return nil, 0, errors.New("Error reading PDF")
+		}
+
+		imageData = pdfImageData
+		maxIndex = extractedPageCount
+	}
 
 	t.Check()
 
-	decoder, err := lilliput.NewDecoder(data)
+	decoder, err := lilliput.NewDecoder(imageData)
 	defer decoder.Close()
 
 	header, err := decoder.Header()
 
 	if err != nil {
-		return nil, errors.New("Error reading image header")
+		return nil, 0, errors.New("Error reading image header")
 	}
 
 	imgWidth := header.Width()
@@ -151,10 +277,10 @@ func processImage(data []byte, imgtype imageType, po processingOptions, t *timer
 	}
 
 	if outputImg, err = ops.Transform(decoder, opts, outputImg); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	t.Check()
 
-	return outputImg, nil
+	return outputImg, maxIndex, nil
 }
