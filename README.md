@@ -142,7 +142,7 @@ If set to `0`, farspark will not enlarge the image if it is smaller than the giv
 
 #### Index
 
-If the media being requested has multiple pages or frames, you can request to render a specific one. (Right now an index > 0 is only supported for PDFs.) The page/frame index starts at zero, and media which has multiple pages will include an `X-Max-Content-Index` header to indicate the maximum index that can be requested.
+If the media being requested has multiple pages or frames, you can request to render a specific one. The page/frame index starts at zero, and media which supports index selection will include an `X-Max-Content-Index` header to indicate the maximum index that can be requested. Right now only supported for PDFs. 
 
 #### Encoded URL
 
