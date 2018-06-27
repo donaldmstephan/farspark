@@ -141,13 +141,13 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 
 		if err != nil {
 			gsMutex.Unlock()
-			return nil, 0, errors.New("Missing dependency libgs")
+			return nil, 0, err
 		}
 
 		gsPtr, err := ghostscript.NewInstance()
 		if err != nil {
 			gsMutex.Unlock()
-			return nil, 0, errors.New("Failed to init Ghostscript")
+			return nil, 0, err
 		}
 
 		gs = gsPtr
@@ -167,7 +167,7 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 	if err := gs.Init(args); err != nil {
 		gsMutex.Unlock()
 
-		return nil, 0, errors.New("Failed to run Ghostscript")
+		return nil, 0, err
 	}
 
 	gs.Exit()
@@ -175,7 +175,7 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 
 	pdfInst, _ := pdf.Open(inFile)
 	if err != nil {
-		return nil, 0, errors.New("Failed to read PDF for paging")
+		return nil, 0, err
 	}
 
 	maxIndex := pdfInst.NumPage() - 1
@@ -184,7 +184,7 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 	defer outFilePtr.Close()
 
 	if err != nil {
-		return nil, 0, errors.New("Failed to read PDF frame")
+		return nil, 0, err
 	}
 
 	outBytes, err := ioutil.ReadAll(outFilePtr)
