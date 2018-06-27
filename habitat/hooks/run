@@ -24,6 +24,4 @@ export FARSPARK_BASE_URL={{ cfg.misc.base_url }}
 export FARSPARK_CACHE_ROOT={{ cfg.misc.cache_root }}
 export FARSPARK_CACHE_SIZE={{ cfg.misc.cache_size }}
 
-export LD_LIBRARY_PATH="{{ pkgPathFor "mozillareality/ghostscript" }}/lib"
-
 exec farspark
