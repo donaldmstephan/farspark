@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"github.com/discordapp/lilliput"
 	"github.com/gfodor/go-ghostscript/ghostscript"
-	"github.com/rsc/pdf"
 	"io/ioutil"
 	"os"
+	"rsc.io/pdf"
 	"strconv"
 	"sync"
 )
