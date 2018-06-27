@@ -21,5 +21,9 @@ export FARSPARK_GZIP_COMPRESSION={{ cfg.compression.gzip_compression }}
 export FARSPARK_SECRET={{ cfg.security.secret }}
 export FARSPARK_ALLOW_ORIGINS={{ cfg.security.allow_origins }}
 export FARSPARK_BASE_URL={{ cfg.misc.base_url }}
+export FARSPARK_CACHE_ROOT={{ cfg.misc.cache_root }}
+export FARSPARK_CACHE_SIZE={{ cfg.misc.cache_size }}
+
+export LD_LIBRARY_PATH=$(cat "{{ pkgPathFor "mozillareality/ghostscript" }}/lib")
 
 exec farspark

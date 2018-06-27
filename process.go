@@ -210,7 +210,7 @@ func processImage(data []byte, url string, imgtype imageType, po processingOptio
 		pdfImageData, extractedPageCount, err := extractPDFPage(data, url, po.Index)
 
 		if err != nil {
-			return nil, 0, errors.New("Error reading PDF")
+			return nil, 0, err
 		}
 
 		imageData = pdfImageData
