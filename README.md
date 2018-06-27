@@ -127,7 +127,7 @@ The URL should contain the signature and resize parameters, like this:
 
 farspark supports the following methods for processing:
 
-* `extract` — does not perform any image transformations, but extracts a single page or frame from an indexable media as an image (for example, from a video or PDF)
+* `extract` — does not perform any image transformations, but extracts a single page or frame from an indexable media as an image (right now video and PDFs are supported.)
 * `fit` — extracts (if needed) & resizes while keeping aspect ratio to fit given size;
 * `fill` — extracts (if needed) & resizes while keeping aspect ratio to fill given size and cropping projecting parts;
 * `raw` — performs no extraction or processing but streams the media through as-is as a proxy (this can be used to simply add CORS headers.) Note that when `raw` is specified, you can also perform an HTTP `HEAD` request to just fetch the remote HTTP headers.
@@ -142,7 +142,7 @@ If set to `0`, farspark will not enlarge the image if it is smaller than the giv
 
 #### Index
 
-If the media being requested has multiple pages or frames, you can request to render a specific one. (Right now this is only supported for PDFs, but video frames should be possible eventually.) The page/frame index starts at zero, and media which has multiple pages will include an `X-Max-Content-Index` header to indicate the maximum index that can be requested.
+If the media being requested has multiple pages or frames, you can request to render a specific one. (Right now an index > 0 is only supported for PDFs.) The page/frame index starts at zero, and media which has multiple pages will include an `X-Max-Content-Index` header to indicate the maximum index that can be requested.
 
 #### Encoded URL
 
