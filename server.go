@@ -49,8 +49,8 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, err
 	}
 
-	if r, ok := resizeTypes[parts[1]]; ok {
-		po.Resize = r
+	if r, ok := processingMethods[parts[1]]; ok {
+		po.Method = r
 	} else {
 		return "", po, fmt.Errorf("Invalid resize type: %s", parts[1])
 	}
@@ -116,7 +116,7 @@ func writeCORS(r *http.Request, rw http.ResponseWriter) {
 
 	for _, nextOrigin := range conf.AllowOrigins {
 		if nextOrigin == origin {
-			rw.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			rw.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
 			allowedOrigin = origin
 			break
 		}
@@ -213,7 +213,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		panic(invalidMethodErr)
 	}
 
@@ -239,7 +239,12 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		panic(newError(404, err.Error(), "Invalid image url"))
 	}
 
-	if procOpt.Resize != Raw {
+	if procOpt.Method != Raw {
+		// Only allow HEAD requests for raw URLs
+		if r.Method == http.MethodHead {
+			panic(invalidMethodErr)
+		}
+
 		var b []byte = nil
 		var maxIndex int
 		var imgtype imageType = UNKNOWN
@@ -321,6 +326,8 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 		rw.WriteHeader(res.StatusCode)
 
-		io.Copy(rw, body)
+		if r.Method == http.MethodGet {
+			io.Copy(rw, body)
+		}
 	}
 }

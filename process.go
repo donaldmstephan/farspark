@@ -62,30 +62,30 @@ var lilliputSupportSave = map[imageType]bool{
 	WEBP: true,
 }
 
-type resizeType int
+type processingMethod int
 
 const (
-	Fit resizeType = iota
+	Fit processingMethod = iota
 	Fill
-	None
+	Extract
 	Raw
 )
 
-var resizeTypes = map[string]resizeType{
-	"fit":  Fit,
-	"fill": Fill,
-	"none": None,
-	"raw":  Raw,
+var processingMethods = map[string]processingMethod{
+	"fit":     Fit,
+	"fill":    Fill,
+	"extract": Extract,
+	"raw":     Raw,
 }
 
-var resizeOpSizeMethods = map[resizeType]lilliput.ImageOpsSizeMethod{
-	Fit:  lilliput.ImageOpsFit,
-	Fill: lilliput.ImageOpsResize,
-	None: lilliput.ImageOpsNoResize,
+var resizeOpSizeMethods = map[processingMethod]lilliput.ImageOpsSizeMethod{
+	Fit:     lilliput.ImageOpsFit,
+	Fill:    lilliput.ImageOpsResize,
+	Extract: lilliput.ImageOpsNoResize,
 }
 
 type processingOptions struct {
-	Resize  resizeType
+	Method  processingMethod
 	Width   int
 	Height  int
 	Enlarge bool
@@ -254,7 +254,7 @@ func processImage(data []byte, url string, imgtype imageType, po processingOptio
 		outputBufferPool <- outputBuffer
 	}()
 
-	imageResizeOp := resizeOpSizeMethods[po.Resize]
+	imageResizeOp := resizeOpSizeMethods[po.Method]
 
 	// Ensure we won't crop out of bounds
 	if !po.Enlarge || imageResizeOp == lilliput.ImageOpsNoResize {

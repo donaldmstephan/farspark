@@ -120,17 +120,17 @@ You can also specify a secret to enable authorization with the HTTP `Authorizati
 The URL should contain the signature and resize parameters, like this:
 
 ```
-/%signature/%resizing_type/%width/%height/%enlarge/%index/%encoded_url.%extension
+/%signature/%method/%width/%height/%enlarge/%index/%encoded_url.%extension
 ```
 
-#### Resizing types
+#### Processing methods
 
-farspark supports the following resizing types:
+farspark supports the following methods for processing:
 
-* `fit` — resizes the image while keeping aspect ratio to fit given size;
-* `fill` — resizes the image while keeping aspect ratio to fill given size and cropping projecting parts;
-* `none` — does not perform any resizing, but extracts a single page or frame from the media as an image (for example, useful for video or PDFs)
-* `raw` — performs no processing and streams the media through as-is (for example, this can be used to simply add CORS headers.)
+* `extract` — does not perform any image transformations, but extracts a single page or frame from an indexable media as an image (for example, from a video or PDF)
+* `fit` — extracts (if needed) & resizes while keeping aspect ratio to fit given size;
+* `fill` — extracts (if needed) & resizes while keeping aspect ratio to fill given size and cropping projecting parts;
+* `raw` — performs no extraction or processing but streams the media through as-is as a proxy (this can be used to simply add CORS headers.) Note that when `raw` is specified, you can also perform an HTTP `HEAD` request to just fetch the remote HTTP headers.
 
 #### Width and height
 

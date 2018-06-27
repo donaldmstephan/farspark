@@ -1,6 +1,7 @@
 ## v1.3
 
 - Added PDF extraction and indexing
+- Allow HEAD requests for raw
 
 ## v1.2.1
 
