@@ -319,15 +319,14 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			panic(newError(500, err.Error(), "Error occurred while streaming media"))
 		}
 
+		defer res.Body.Close()
 		body := res.Body
-		defer body.Close()
+
 		copyHeader(rw.Header(), res.Header)
 		writeCORS(r, rw)
 
 		rw.WriteHeader(res.StatusCode)
 
-		if r.Method == http.MethodGet {
-			io.Copy(rw, body)
-		}
+		io.Copy(rw, body)
 	}
 }

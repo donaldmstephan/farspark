@@ -180,7 +180,7 @@ func downloadImage(url string) ([]byte, imageType, error) {
 func streamImage(url string, incomingRequest *http.Request) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
 
-	outgoingRequest, err := http.NewRequest("GET", fullURL, nil)
+	outgoingRequest, err := http.NewRequest(incomingRequest.Method, fullURL, nil)
 
 	if err != nil {
 		return nil, err
