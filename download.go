@@ -55,7 +55,8 @@ func (r *netReader) GrowBuf(s int) {
 
 func initDownloading() {
 	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Proxy:             http.ProxyFromEnvironment,
+		DisableKeepAlives: true,
 	}
 	if conf.LocalFileSystemRoot != "" {
 		transport.RegisterProtocol("local", http.NewFileTransport(http.Dir(conf.LocalFileSystemRoot)))
