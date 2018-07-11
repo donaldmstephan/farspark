@@ -213,7 +213,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
 		panic(invalidMethodErr)
 	}
 
@@ -240,8 +240,8 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if procOpt.Method != Raw {
-		// Only allow HEAD requests for raw URLs
-		if r.Method == http.MethodHead {
+		// Only allow HEAD and OPTIONS requests for raw URLs
+		if r.Method == http.MethodHead || r.Method == http.MethodOptions {
 			panic(invalidMethodErr)
 		}
 
