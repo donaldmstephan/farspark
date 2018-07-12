@@ -161,11 +161,6 @@ func respondWithError(reqID string, rw http.ResponseWriter, err farsparkError) {
 	rw.Write([]byte(err.PublicMessage))
 }
 
-func respondWithOptions(reqID string, rw http.ResponseWriter) {
-	logResponse(200, fmt.Sprintf("[%s] Respond with options", reqID))
-	rw.WriteHeader(200)
-}
-
 func checkSecret(s string) bool {
 	if len(conf.Secret) == 0 {
 		return true
