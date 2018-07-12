@@ -208,11 +208,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[%s] %s: %s\n", reqID, r.Method, r.URL.RequestURI())
 
-	if r.Method == http.MethodOptions {
-		respondWithOptions(reqID, rw)
-		return
-	}
-
 	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
 		panic(invalidMethodErr)
 	}
