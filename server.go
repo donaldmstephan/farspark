@@ -115,9 +115,9 @@ func writeCORS(r *http.Request, rw http.ResponseWriter) {
 	allowedOrigin := "null"
 
 	for _, nextOrigin := range conf.AllowOrigins {
-		if nextOrigin == origin {
+		if nextOrigin == "*" || nextOrigin == origin {
 			rw.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
-			allowedOrigin = origin
+			allowedOrigin = nextOrigin
 			break
 		}
 	}
