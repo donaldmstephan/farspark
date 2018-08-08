@@ -155,7 +155,7 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 
 	args := []string{
 		"gs",
-		"-sDEVICE=pngalpha",
+		"-sDEVICE=png16m",
 		fmt.Sprintf("-sOutputFile=%s", outFile),
 		fmt.Sprintf("-dFirstPage=%d", index+1),
 		fmt.Sprintf("-dLastPage=%d", index+1),
