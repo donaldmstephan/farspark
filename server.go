@@ -130,7 +130,7 @@ func respondWithImage(reqID string, r *http.Request, rw http.ResponseWriter, dat
 	gzipped := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && conf.GZipCompression > 0
 
 	rw.Header().Set("Expires", time.Now().Add(time.Second*time.Duration(conf.TTL)).Format(http.TimeFormat))
-	rw.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d, public", conf.TTL))
+	rw.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", conf.TTL))
 	rw.Header().Set("Content-Type", mimes[po.Format])
 
 	dataToRespond := data
