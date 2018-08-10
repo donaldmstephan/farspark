@@ -123,7 +123,6 @@ func writeCORS(r *http.Request, rw http.ResponseWriter) {
 	}
 
 	rw.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-	rw.Header().Set("Access-Control-Allow-Headers", "X-Content-Index, X-Max-Content-Index")
 }
 
 func respondWithImage(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, imgURL string, po processingOptions, duration time.Duration) {
