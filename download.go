@@ -67,7 +67,7 @@ func initDownloading() {
 	}
 }
 
-func checkTypeAndDimensions(data []byte) (imageType, error) {
+func checkTypeAndDimensions(data []byte) (mediaType, error) {
 	contentType := http.DetectContentType(data)
 
 	if contentType == "application/pdf" {
@@ -88,9 +88,9 @@ func checkTypeAndDimensions(data []byte) (imageType, error) {
 
 	imgWidth := header.Width()
 	imgHeight := header.Height()
-	imgtypeStr := decoder.Description()
+	mtypeStr := decoder.Description()
 
-	imgtype, imgtypeOk := imageTypes[imgtypeStr]
+	mtype, mtypeOk := mediaTypes[mtypeStr]
 
 	if err != nil {
 		return UNKNOWN, err
@@ -101,23 +101,23 @@ func checkTypeAndDimensions(data []byte) (imageType, error) {
 	if imgWidth*imgHeight > conf.MaxSrcResolution {
 		return UNKNOWN, errors.New("Source image is too big")
 	}
-	if !imgtypeOk {
+	if !mtypeOk {
 		return UNKNOWN, errors.New("Source image type not supported")
 	}
 
-	return imgtype, nil
+	return mtype, nil
 }
 
-func readAndCheckImageBytes(b []byte) ([]byte, imageType, error) {
-	imgtype, err := checkTypeAndDimensions(b)
+func readAndCheckMediaBytes(b []byte) ([]byte, mediaType, error) {
+	mtype, err := checkTypeAndDimensions(b)
 	if err != nil {
 		return nil, UNKNOWN, err
 	}
 
-	return b, imgtype, err
+	return b, mtype, err
 }
 
-func readAndCheckImageResponse(res *http.Response) ([]byte, imageType, error) {
+func readAndCheckMediaResponse(res *http.Response) ([]byte, mediaType, error) {
 	nr := newNetReader(res.Body)
 
 	if res.ContentLength > 0 {
@@ -129,10 +129,10 @@ func readAndCheckImageResponse(res *http.Response) ([]byte, imageType, error) {
 		return nil, UNKNOWN, err
 	}
 
-	return readAndCheckImageBytes(b)
+	return readAndCheckMediaBytes(b)
 }
 
-func shouldCacheImageType(t imageType) bool {
+func shouldCacheMediaType(t mediaType) bool {
 	// For now, just cache PDF files locally since we re-fetch new pages over and over,
 	// and they tend to be big files
 	if t == PDF {
@@ -142,7 +142,7 @@ func shouldCacheImageType(t imageType) bool {
 	return false
 }
 
-func downloadImage(url string) ([]byte, imageType, error) {
+func downloadMedia(url string) ([]byte, mediaType, error) {
 	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
 	sha256 := sha256.New()
 	sha256.Write([]byte(fullURL))
@@ -155,7 +155,7 @@ func downloadImage(url string) ([]byte, imageType, error) {
 			return nil, UNKNOWN, err
 		}
 
-		return readAndCheckImageBytes(bytes)
+		return readAndCheckMediaBytes(bytes)
 	} else {
 		res, err := downloadClient.Get(fullURL)
 		if err != nil {
@@ -168,17 +168,17 @@ func downloadImage(url string) ([]byte, imageType, error) {
 			return nil, UNKNOWN, fmt.Errorf("Can't download image; Status: %d; %s", res.StatusCode, string(body))
 		}
 
-		bytes, imageType, err := readAndCheckImageResponse(res)
+		bytes, mediaType, err := readAndCheckMediaResponse(res)
 
-		if err == nil && shouldCacheImageType(imageType) && farsparkCache != nil {
+		if err == nil && shouldCacheMediaType(mediaType) && farsparkCache != nil {
 			farsparkCache.Write(srcCacheKey, bytes)
 		}
 
-		return bytes, imageType, err
+		return bytes, mediaType, err
 	}
 }
 
-func streamImage(url string, incomingRequest *http.Request) (*http.Response, error) {
+func streamMedia(url string, incomingRequest *http.Request) (*http.Response, error) {
 	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
 
 	outgoingRequest, err := http.NewRequest(incomingRequest.Method, fullURL, nil)

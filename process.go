@@ -14,10 +14,10 @@ import (
 	"sync"
 )
 
-type imageType int
+type mediaType int
 
 const (
-	UNKNOWN imageType = iota
+	UNKNOWN mediaType = iota
 	JPEG
 	PNG
 	WEBP
@@ -29,7 +29,7 @@ const (
 	PDF
 )
 
-var imageTypes = map[string]imageType{
+var mediaTypes = map[string]mediaType{
 	"JPG":  JPEG,
 	"JPEG": JPEG,
 	"PNG":  PNG,
@@ -42,20 +42,20 @@ var imageTypes = map[string]imageType{
 	"PDF":  PDF,
 }
 
-var outputFileTypes = map[imageType]string{
+var outputFileTypes = map[mediaType]string{
 	JPEG: ".jpeg",
 	PNG:  ".png",
 	WEBP: ".webp",
 	GIF:  ".gif",
 }
 
-var EncodeOptions = map[imageType]map[int]int{
+var EncodeOptions = map[mediaType]map[int]int{
 	JPEG: map[int]int{lilliput.JpegQuality: 85},
 	PNG:  map[int]int{lilliput.PngCompression: 7},
 	WEBP: map[int]int{lilliput.WebpQuality: 85},
 }
 
-var lilliputSupportSave = map[imageType]bool{
+var lilliputSupportSave = map[mediaType]bool{
 	JPEG: true,
 	PNG:  true,
 	GIF:  true,
@@ -89,7 +89,7 @@ type processingOptions struct {
 	Width   int
 	Height  int
 	Enlarge bool
-	Format  imageType
+	Format  mediaType
 	Index   int
 }
 
@@ -200,13 +200,13 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 	return outBytes, maxIndex, err
 }
 
-func processImage(data []byte, url string, imgtype imageType, po processingOptions, t *timer) ([]byte, int, error) {
+func processMedia(data []byte, url string, mtype mediaType, po processingOptions, t *timer) ([]byte, int, error) {
 	defer keepAlive(data)
 
 	var imageData = data
 	var maxIndex = 1
 
-	if imgtype == PDF {
+	if mtype == PDF {
 		pdfImageData, extractedPageCount, err := extractPDFPage(data, url, po.Index)
 
 		if err != nil {
