@@ -201,8 +201,6 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 }
 
 func processMedia(data []byte, url string, mtype mediaType, po processingOptions, t *timer) ([]byte, int, error) {
-	defer keepAlive(data)
-
 	var imageData = data
 	var maxIndex = 1
 
