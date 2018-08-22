@@ -18,7 +18,7 @@ import (
 	nanoid "github.com/matoous/go-nanoid"
 )
 
-var mimes = map[imageType]string{
+var mimes = map[mediaType]string{
 	JPEG: "image/jpeg",
 	PNG:  "image/png",
 	WEBP: "image/webp",
@@ -72,8 +72,8 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 	filenameParts := strings.Split(strings.Join(parts[6:], ""), ".")
 
 	if len(filenameParts) < 2 {
-		po.Format = imageTypes["JPG"]
-	} else if f, ok := imageTypes[strings.ToUpper(filenameParts[1])]; ok {
+		po.Format = mediaTypes["JPG"]
+	} else if f, ok := mediaTypes[strings.ToUpper(filenameParts[1])]; ok {
 		po.Format = f
 	} else {
 		return "", po, fmt.Errorf("Invalid image format: %s", filenameParts[1])
@@ -126,7 +126,7 @@ func writeCORS(r *http.Request, rw http.ResponseWriter) {
 	rw.Header().Set("Access-Control-Expose-Headers", "Age, Date, Content-Length, Content-Range, X-Content-Duration, X-Content-Index, X-Max-Content-Index, X-Cache, X-Varnish")
 }
 
-func respondWithImage(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, imgURL string, po processingOptions, duration time.Duration) {
+func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, mediaURL string, po processingOptions, duration time.Duration) {
 	gzipped := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && conf.GZipCompression > 0
 
 	rw.Header().Set("Expires", time.Now().Add(time.Second*time.Duration(conf.TTL)).Format(http.TimeFormat))
@@ -152,7 +152,7 @@ func respondWithImage(reqID string, r *http.Request, rw http.ResponseWriter, dat
 	rw.WriteHeader(200)
 	rw.Write(dataToRespond)
 
-	logResponse(200, fmt.Sprintf("[%s] Processed in %s: %s; %+v", reqID, duration, imgURL, po))
+	logResponse(200, fmt.Sprintf("[%s] Processed in %s: %s; %+v", reqID, duration, mediaURL, po))
 }
 
 func respondWithError(reqID string, rw http.ResponseWriter, err farsparkError) {
@@ -221,13 +221,13 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	imgURL, procOpt, err := parsePath(r)
+	mediaURL, procOpt, err := parsePath(r)
 	if err != nil {
-		panic(newError(404, err.Error(), "Invalid image url"))
+		panic(newError(404, err.Error(), "Invalid media url"))
 	}
 
-	if _, err = url.ParseRequestURI(imgURL); err != nil {
-		panic(newError(404, err.Error(), "Invalid image url"))
+	if _, err = url.ParseRequestURI(mediaURL); err != nil {
+		panic(newError(404, err.Error(), "Invalid media url"))
 	}
 
 	if procOpt.Method != Raw {
@@ -238,34 +238,34 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 		var b []byte = nil
 		var maxIndex int
-		var imgtype imageType = UNKNOWN
+		var mtype mediaType = UNKNOWN
 
 		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 
-		contentsKey := getIndexContentsCacheKey(imgURL, procOpt.Index)
+		contentsKey := getIndexContentsCacheKey(mediaURL, procOpt.Index)
 
 		// Optimization: use the local page contents cache and skip download if possible
 		if farsparkCache != nil && farsparkCache.Has(contentsKey) {
 			outData, contentErr := farsparkCache.Read(contentsKey)
-			maxIndexBytes, maxIndexErr := farsparkCache.Read(getMaxIndexCacheKey(imgURL))
+			maxIndexBytes, maxIndexErr := farsparkCache.Read(getMaxIndexCacheKey(mediaURL))
 			maxIndexParsed, maxIndexParseErr := strconv.Atoi(string(maxIndexBytes))
 
 			if contentErr == nil && maxIndexErr == nil && maxIndexParseErr == nil {
 				b = outData
-				imgtype = PNG
+				mtype = PNG
 				maxIndex = maxIndexParsed
 			}
 		}
 
 		if b == nil {
-			downloadBytes, downloadImageType, err := downloadImage(imgURL)
+			downloadBytes, downloadMediaType, err := downloadMedia(mediaURL)
 
 			if err != nil {
-				panic(newError(404, err.Error(), "Image is unreachable"))
+				panic(newError(404, err.Error(), "Media is unreachable"))
 			}
 
 			b = downloadBytes
-			imgtype = downloadImageType
+			mtype = downloadMediaType
 		}
 
 		t.Check()
@@ -281,10 +281,10 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 		t.Check()
 
-		processedBytes, processedMaxIndex, err := processImage(b, imgURL, imgtype, procOpt, t)
+		processedBytes, processedMaxIndex, err := processMedia(b, mediaURL, mtype, procOpt, t)
 
 		if err != nil {
-			panic(newError(500, err.Error(), "Error occurred while processing image"))
+			panic(newError(500, err.Error(), "Error occurred while processing media"))
 		}
 
 		b = processedBytes
@@ -302,9 +302,9 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			rw.Header().Set("X-Max-Content-Index", strconv.Itoa(maxIndex))
 		}
 
-		respondWithImage(reqID, r, rw, b, imgURL, procOpt, t.Since())
+		respondWithMedia(reqID, r, rw, b, mediaURL, procOpt, t.Since())
 	} else {
-		res, err := streamImage(imgURL, r)
+		res, err := streamMedia(mediaURL, r)
 
 		if err != nil {
 			panic(newError(500, err.Error(), "Error occurred while streaming media"))
