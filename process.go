@@ -200,30 +200,15 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 	return outBytes, maxIndex, err
 }
 
-func processMedia(data []byte, url string, mtype mediaType, po processingOptions, t *timer) ([]byte, int, error) {
-	var imageData = data
-	var maxIndex = 1
+func processImage(data []byte, po processingOptions, t *timer) ([]byte, error) {
 
-	if mtype == PDF {
-		pdfImageData, extractedPageCount, err := extractPDFPage(data, url, po.Index)
-
-		if err != nil {
-			return nil, 0, err
-		}
-
-		imageData = pdfImageData
-		maxIndex = extractedPageCount
-	}
-
-	t.Check()
-
-	decoder, err := lilliput.NewDecoder(imageData)
+	decoder, err := lilliput.NewDecoder(data)
 	defer decoder.Close()
 
 	header, err := decoder.Header()
 
 	if err != nil {
-		return nil, 0, errors.New("Error reading image header")
+		return nil, errors.New("Error reading image header")
 	}
 
 	imgWidth := header.Width()
@@ -275,10 +260,31 @@ func processMedia(data []byte, url string, mtype mediaType, po processingOptions
 	}
 
 	if outputImg, err = ops.Transform(decoder, opts, outputImg); err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	t.Check()
 
-	return outputImg, maxIndex, nil
+	return outputImg, nil
+}
+
+func processMedia(data []byte, url string, mtype mediaType, po processingOptions, t *timer) ([]byte, int, error) {
+	t.Check()
+
+	switch mtype {
+	case PDF:
+		pdfImageData, extractedPageCount, err := extractPDFPage(data, url, po.Index)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		t.Check()
+
+		outputImg, err := processImage(pdfImageData, po, t)
+		return outputImg, extractedPageCount, err
+
+	default:
+		outputImg, err := processImage(data, po, t)
+		return outputImg, 1, err
+	}
 }
