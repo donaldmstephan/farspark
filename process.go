@@ -24,73 +24,41 @@ const (
 	PNG
 	WEBP
 	GIF
-	WEBM
-	MP4
-	MOV
-	OGG
 	PDF
 )
 
+// Map from URL extension to inferred output media type.
 var mediaTypes = map[string]mediaType{
 	"JPG":  JPEG,
 	"JPEG": JPEG,
 	"PNG":  PNG,
-	"WEBP": WEBP,
-	"MP4":  MP4,
-	"MOV":  MOV,
-	"GIF":  GIF,
-	"WEBM": WEBM,
-	"OGG":  OGG,
-	"PDF":  PDF,
 }
 
+// Map from output media type to Lilliput output file type identifier.
 var outputFileTypes = map[mediaType]string{
 	JPEG: ".jpeg",
 	PNG:  ".png",
-	WEBP: ".webp",
-	GIF:  ".gif",
 }
 
 var EncodeOptions = map[mediaType]map[int]int{
 	JPEG: map[int]int{lilliput.JpegQuality: 85},
 	PNG:  map[int]int{lilliput.PngCompression: 7},
-	WEBP: map[int]int{lilliput.WebpQuality: 85},
-}
-
-var lilliputSupportSave = map[mediaType]bool{
-	JPEG: true,
-	PNG:  true,
-	GIF:  true,
-	WEBP: true,
 }
 
 type processingMethod int
 
 const (
-	Fit processingMethod = iota
-	Fill
+	Raw processingMethod = iota
 	Extract
-	Raw
 )
 
 var processingMethods = map[string]processingMethod{
-	"fit":     Fit,
-	"fill":    Fill,
 	"extract": Extract,
 	"raw":     Raw,
 }
 
-var resizeOpSizeMethods = map[processingMethod]lilliput.ImageOpsSizeMethod{
-	Fit:     lilliput.ImageOpsFit,
-	Fill:    lilliput.ImageOpsResize,
-	Extract: lilliput.ImageOpsNoResize,
-}
-
 type processingOptions struct {
 	Method  processingMethod
-	Width   int
-	Height  int
-	Enlarge bool
 	Format  mediaType
 	Index   int
 }
@@ -300,24 +268,11 @@ func processImage(data []byte, po processingOptions, t *timer) ([]byte, error) {
 		outputBufferPool <- outputBuffer
 	}()
 
-	imageResizeOp := resizeOpSizeMethods[po.Method]
-
-	// Ensure we won't crop out of bounds
-	if !po.Enlarge || imageResizeOp == lilliput.ImageOpsNoResize {
-		if imgWidth < po.Width {
-			po.Width = imgWidth
-		}
-
-		if imgHeight < po.Height {
-			po.Height = imgHeight
-		}
-	}
-
 	opts := &lilliput.ImageOptions{
 		FileType:             outputFileTypes[po.Format],
-		Width:                po.Width,
-		Height:               po.Height,
-		ResizeMethod:         imageResizeOp,
+		Width:                imgWidth,
+		Height:               imgHeight,
+		ResizeMethod:         lilliput.ImageOpsNoResize,
 		NormalizeOrientation: true,
 		EncodeOptions:        EncodeOptions[po.Format],
 	}

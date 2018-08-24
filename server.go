@@ -56,15 +56,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, fmt.Errorf("Invalid resize type: %s", parts[1])
 	}
 
-	if po.Width, err = strconv.Atoi(parts[2]); err != nil {
-		return "", po, fmt.Errorf("Invalid width: %s", parts[2])
-	}
-
-	if po.Height, err = strconv.Atoi(parts[3]); err != nil {
-		return "", po, fmt.Errorf("Invalid height: %s", parts[3])
-	}
-
-	po.Enlarge = parts[4] != "0"
+	// path parts 2-4 correspond to obsolete image transformation options (width, height, enlarge)
 
 	if po.Index, err = strconv.Atoi(parts[5]); err != nil {
 		return "", po, fmt.Errorf("Invalid index: %s", parts[5])
@@ -78,10 +70,6 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		po.Format = f
 	} else {
 		return "", po, fmt.Errorf("Invalid image format: %s", filenameParts[1])
-	}
-
-	if !lilliputSupportSave[po.Format] {
-		return "", po, errors.New("Resulting image type not supported")
 	}
 
 	filename, err := base64.RawURLEncoding.DecodeString(filenameParts[0])
