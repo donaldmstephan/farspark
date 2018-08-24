@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -313,11 +314,25 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		defer res.Body.Close()
 		body := res.Body
 
+		if res.Header.Get("Content-Type") == "model/gltf+json" && conf.ServerURL != nil {
+			contents, err := ioutil.ReadAll(body)
+			if err != nil {
+				panic(newError(500, err.Error(), "Error occurred while reading content"))
+			}
+			baseURL, err := url.Parse(mediaURL)
+			if err != nil {
+				panic(newError(500, err.Error(), "Invalid GLTF base URL"))
+			}
+			transformed, err := processGLTF(contents, baseURL, conf.ServerURL)
+			if err != nil {
+				panic(newError(500, err.Error(), "Error occurred while transforming GLTF"))
+			}
+			body = ioutil.NopCloser(bytes.NewReader(transformed))
+		}
+
 		copyHeader(rw.Header(), res.Header)
 		writeCORS(r, rw)
-
 		rw.WriteHeader(res.StatusCode)
-
 		io.Copy(rw, body)
 	}
 }

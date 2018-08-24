@@ -29,6 +29,7 @@ Farspark's features are largely a superset of imgproxy's.
 Farspark supports most [imgproxy configuration options](https://github.com/DarthSim/imgproxy/blob/master/README.md#configuration), plus:
 
 * `FARSPARK_ALLOW_ORIGINS` - when set, enables CORS headers with provided list of comma-separated origins. CORS headers are disabled by default.
+* `FARSPARK_SERVER_URL` - The URL of this server; used for rewriting URLs for asset subresources, i.e. in GLTFs.
 * `FARSPARK_CACHE_ROOT` - Root folder for filesystem cache used to speed up frame/page extraction across requests
 * `FARSPARK_CACHE_SIZE` - Size (in bytes) for the filesystem cache
 
