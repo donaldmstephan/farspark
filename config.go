@@ -29,8 +29,11 @@ func megaIntEnvConfig(f *int, name string) {
 }
 
 func urlEnvConfig(u **url.URL, name string) {
-	if env, err := url.Parse(os.Getenv(name)); err == nil {
-		*u = env
+	if env, present := os.LookupEnv(name); present {
+		if url, err := url.Parse(env); err == nil {
+			log.Printf(env)
+			*u = url
+		}
 	}
 }
 
