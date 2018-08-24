@@ -29,6 +29,7 @@ gzip_compression = ""
 
 [misc]
 
+server_url = ""
 base_url = ""
 cache_root = ""
 cache_size = ""

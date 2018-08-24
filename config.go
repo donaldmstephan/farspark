@@ -9,6 +9,7 @@ import (
 	"github.com/peterbourgon/diskv"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"os"
 	"runtime"
 	"strconv"
@@ -24,6 +25,12 @@ func intEnvConfig(i *int, name string) {
 func megaIntEnvConfig(f *int, name string) {
 	if env, err := strconv.ParseFloat(os.Getenv(name), 64); err == nil {
 		*f = int(env * 1000000)
+	}
+}
+
+func urlEnvConfig(u **url.URL, name string) {
+	if env, err := url.Parse(os.Getenv(name)); err == nil {
+		*u = env
 	}
 }
 
@@ -115,7 +122,8 @@ type config struct {
 	ETagEnabled   bool
 	ETagSignature []byte
 
-	BaseURL string
+	ServerURL *url.URL
+	BaseURL   string
 }
 
 var conf = config{
@@ -187,6 +195,7 @@ func init() {
 
 	boolEnvConfig(&conf.ETagEnabled, "FARSPARK_USE_ETAG")
 
+	urlEnvConfig(&conf.ServerURL, "FARSPARK_SERVER_URL")
 	strEnvConfig(&conf.BaseURL, "FARSPARK_BASE_URL")
 
 	if len(conf.Key) == 0 {

@@ -3,11 +3,13 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/discordapp/lilliput"
 	"github.com/gfodor/go-ghostscript/ghostscript"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"rsc.io/pdf"
 	"strconv"
@@ -198,6 +200,67 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 	}
 
 	return outBytes, maxIndex, err
+}
+
+func generateFarsparkURL(targetURL *url.URL, serverURL *url.URL) (*url.URL, error) {
+	rawPath := "/raw/0/0/0/0/" + base64.RawURLEncoding.EncodeToString([]byte(targetURL.String()))
+	token, err := signPath(rawPath)
+	if err != nil {
+		return targetURL, err
+	}
+	signedURL, err := url.Parse("/" + token + rawPath)
+	if err != nil {
+		return targetURL, err
+	}
+
+	return serverURL.ResolveReference(signedURL), nil
+}
+
+func transformSubresourceURL(subresourceURL *url.URL, baseURL *url.URL, serverURL *url.URL) (*url.URL, error) {
+	targetURL := baseURL.ResolveReference(subresourceURL)
+	return generateFarsparkURL(targetURL, serverURL)
+}
+
+func processGLTF(data []byte, baseURL *url.URL, serverURL *url.URL) ([]byte, error) {
+	var model map[string]interface{}
+	err := json.Unmarshal(data, &model)
+	if err != nil {
+		return nil, err
+	}
+
+	images := model["images"].([]interface{})
+	for _, v := range images {
+		image := v.(map[string]interface{})
+		oldURL, err := url.Parse(image["uri"].(string))
+		if err != nil {
+			return nil, err
+		}
+		newURL, err := transformSubresourceURL(oldURL, baseURL, serverURL)
+		if err != nil {
+			return nil, err
+		}
+		image["uri"] = newURL.String()
+	}
+
+	buffers := model["buffers"].([]interface{})
+	for _, v := range buffers {
+		buffer := v.(map[string]interface{})
+		oldURL, err := url.Parse(buffer["uri"].(string))
+		if err != nil {
+			return nil, err
+		}
+		newURL, err := transformSubresourceURL(oldURL, baseURL, serverURL)
+		if err != nil {
+			return nil, err
+		}
+		buffer["uri"] = newURL.String()
+	}
+
+	result, err := json.Marshal(model)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func processImage(data []byte, po processingOptions, t *timer) ([]byte, error) {
