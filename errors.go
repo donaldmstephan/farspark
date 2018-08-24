@@ -26,7 +26,6 @@ func newUnexpectedError(err error, skip int) farsparkError {
 }
 
 var (
-	invalidSecretErr = newError(403, "Invalid secret", "Forbidden")
 	invalidMethodErr = newError(422, "Invalid request method", "Method doesn't allowed")
 )
 

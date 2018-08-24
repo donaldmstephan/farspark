@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -106,26 +105,17 @@ type config struct {
 	MaxSrcDimension  int
 	MaxSrcResolution int
 
-	Quality         int
 	GZipCompression int
 
 	Key  []byte
 	Salt []byte
 
-	Secret string
-
 	AllowOrigins []string
-
-	LocalFileSystemRoot string
 
 	CacheRoot string
 	CacheSize int
 
-	ETagEnabled   bool
-	ETagSignature []byte
-
 	ServerURL *url.URL
-	BaseURL   string
 }
 
 var conf = config{
@@ -137,9 +127,7 @@ var conf = config{
 	TTL:              3600,
 	MaxSrcDimension:  8192,
 	MaxSrcResolution: 16800000,
-	Quality:          80,
 	GZipCompression:  5,
-	ETagEnabled:      false,
 }
 
 var farsparkCache *diskv.Diskv
@@ -177,7 +165,6 @@ func init() {
 	intEnvConfig(&conf.MaxSrcDimension, "FARSPARK_MAX_SRC_DIMENSION")
 	megaIntEnvConfig(&conf.MaxSrcResolution, "FARSPARK_MAX_SRC_RESOLUTION")
 
-	intEnvConfig(&conf.Quality, "FARSPARK_QUALITY")
 	intEnvConfig(&conf.GZipCompression, "FARSPARK_GZIP_COMPRESSION")
 
 	hexEnvConfig(&conf.Key, "FARSPARK_KEY")
@@ -186,19 +173,12 @@ func init() {
 	hexFileConfig(&conf.Key, *keypath)
 	hexFileConfig(&conf.Salt, *saltpath)
 
-	strEnvConfig(&conf.Secret, "FARSPARK_SECRET")
-
 	strSliceEnvConfig(&conf.AllowOrigins, "FARSPARK_ALLOW_ORIGINS")
-
-	strEnvConfig(&conf.LocalFileSystemRoot, "FARSPARK_LOCAL_FILESYSTEM_ROOT")
 
 	strEnvConfig(&conf.CacheRoot, "FARSPARK_CACHE_ROOT")
 	intEnvConfig(&conf.CacheSize, "FARSPARK_CACHE_SIZE")
 
-	boolEnvConfig(&conf.ETagEnabled, "FARSPARK_USE_ETAG")
-
 	urlEnvConfig(&conf.ServerURL, "FARSPARK_SERVER_URL")
-	strEnvConfig(&conf.BaseURL, "FARSPARK_BASE_URL")
 
 	if len(conf.Key) == 0 {
 		log.Fatalln("Key is not defined")
@@ -243,37 +223,10 @@ func init() {
 		log.Fatalf("Max src resolution should be greater than 0, now - %d\n", conf.MaxSrcResolution)
 	}
 
-	if conf.Quality <= 0 {
-		log.Fatalf("Quality should be greater than 0, now - %d\n", conf.Quality)
-	} else if conf.Quality > 100 {
-		log.Fatalf("Quality can't be greater than 100, now - %d\n", conf.Quality)
-	}
-
 	if conf.GZipCompression < 0 {
 		log.Fatalf("GZip compression should be greater than or quual to 0, now - %d\n", conf.GZipCompression)
 	} else if conf.GZipCompression > 9 {
 		log.Fatalf("GZip compression can't be greater than 9, now - %d\n", conf.GZipCompression)
-	}
-
-	if conf.LocalFileSystemRoot != "" {
-		stat, err := os.Stat(conf.LocalFileSystemRoot)
-		if err != nil {
-			log.Fatalf("Cannot use local directory: %s", err)
-		} else {
-			if !stat.IsDir() {
-				log.Fatalf("Cannot use local directory: not a directory")
-			}
-		}
-		if conf.LocalFileSystemRoot == "/" {
-			log.Print("Exposing root via FARSPARK_LOCAL_FILESYSTEM_ROOT is unsafe")
-		}
-	}
-
-	if conf.ETagEnabled {
-		conf.ETagSignature = make([]byte, 16)
-		rand.Read(conf.ETagSignature)
-		log.Printf("ETag support is activated. The random value was generated to be used for ETag calculation: %s\n",
-			fmt.Sprintf("%x", conf.ETagSignature))
 	}
 
 	initDownloading()

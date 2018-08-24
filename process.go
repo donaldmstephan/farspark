@@ -58,9 +58,9 @@ var processingMethods = map[string]processingMethod{
 }
 
 type processingOptions struct {
-	Method  processingMethod
-	Format  mediaType
-	Index   int
+	Method processingMethod
+	Format mediaType
+	Index  int
 }
 
 type OutputBuffer struct {

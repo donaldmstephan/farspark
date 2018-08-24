@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -151,13 +150,6 @@ func respondWithError(reqID string, rw http.ResponseWriter, err farsparkError) {
 	rw.Write([]byte(err.PublicMessage))
 }
 
-func checkSecret(s string) bool {
-	if len(conf.Secret) == 0 {
-		return true
-	}
-	return strings.HasPrefix(s, "Bearer ") && subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(s, "Bearer ")), []byte(conf.Secret)) == 1
-}
-
 func (h *httpHandler) lock() {
 	h.sem <- struct{}{}
 }
@@ -195,10 +187,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
 		panic(invalidMethodErr)
-	}
-
-	if !checkSecret(r.Header.Get("Authorization")) {
-		panic(invalidSecretErr)
 	}
 
 	h.lock()
@@ -255,17 +243,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 			b = downloadBytes
 			mtype = downloadMediaType
-		}
-
-		t.Check()
-
-		if conf.ETagEnabled {
-			eTag := calcETag(b, &procOpt)
-			rw.Header().Set("ETag", eTag)
-
-			if eTag == r.Header.Get("If-None-Match") {
-				panic(notModifiedErr)
-			}
 		}
 
 		t.Check()

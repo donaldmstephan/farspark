@@ -12,24 +12,19 @@ download_timeout = ""
 concurrency = ""
 max_clients = ""
 ttl = ""
-use_etag = ""
-local_filesystem_root = ""
 
 [security]
 
 allow_origins = ""
 max_src_dimension = ""
 max_src_resolution = ""
-secret = ""
 
 [compression]
 
-quality = ""
 gzip_compression = ""
 
 [misc]
 
 server_url = ""
-base_url = ""
 cache_root = ""
 cache_size = ""
