@@ -1,4 +1,4 @@
-package: github.com/gfodor/farspark
+package: github.com/MozillaReality/farspark
 import:
 - package: gopkg.in/yaml.v2
 - package: golang.org/x/net
