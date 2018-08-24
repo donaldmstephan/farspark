@@ -121,7 +121,7 @@ func writeCORS(r *http.Request, rw http.ResponseWriter) {
 			break
 		}
 	}
-
+	rw.Header().Add("Vary", "Origin")
 	rw.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 	rw.Header().Set("Access-Control-Expose-Headers", "Age, Date, Content-Length, Content-Range, X-Content-Duration, X-Content-Index, X-Max-Content-Index, X-Cache, X-Varnish")
 }
