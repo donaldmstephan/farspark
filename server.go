@@ -314,7 +314,10 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		defer res.Body.Close()
 		body := res.Body
 
-		if res.Header.Get("Content-Type") == "model/gltf+json" && conf.ServerURL != nil {
+		isGLTF := res.Header.Get("Content-Type") == "model/gltf+json"
+		expectBody := r.Method != http.MethodHead && r.Method != http.MethodOptions
+		shouldRewrite := conf.ServerURL != nil
+		if isGLTF && expectBody && shouldRewrite {
 			contents, err := ioutil.ReadAll(body)
 			if err != nil {
 				panic(newError(500, err.Error(), "Error occurred while reading content"))
