@@ -21,9 +21,10 @@ const resizing_type = 'fill'
 const width = 300
 const height = 300
 const enlarge = 1
+const index = 0
 const extension = 'png'
 const encoded_url = urlSafeBase64(url)
-const path = `/${resizing_type}/${width}/${height}/${enlarge}/${encoded_url}.${extension}`
+const path = `/${resizing_type}/${width}/${height}/${enlarge}/${index}/${encoded_url}.${extension}`
 
 const signature = sign(SALT, path, KEY)
 const result = `/${signature}${path}`
