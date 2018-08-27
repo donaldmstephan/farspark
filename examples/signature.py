@@ -14,12 +14,13 @@ encoded_url = base64.urlsafe_b64encode(url).rstrip(b"=").decode()
 # You can trim padding spaces to get good-looking url
 encoded_url = '/'.join(textwrap.wrap(encoded_url, 16))
 
-path = "/{resize}/{width}/{height}/{enlarge}/{encoded_url}.{extension}".format(
+path = "/{resize}/{width}/{height}/{enlarge}/${index}/{encoded_url}.{extension}".format(
     encoded_url=encoded_url,
     resize="fill",
     width=300,
     height=300,
     enlarge=1,
+    index=0,
     extension="png",
 ).encode()
 digest = hmac.new(key, msg=salt+path, digestmod=hashlib.sha256).digest()

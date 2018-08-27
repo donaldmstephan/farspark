@@ -17,6 +17,7 @@ defmodule App.Farspark do
       to_string(opts.width),
       to_string(opts.height),
       to_string(opts.enlarge),
+      to_string(opts.index),
       Base.url_encode64(img_url, padding: false) <> "." <> opts.extension
     ])
   end
@@ -32,5 +33,5 @@ end
 #
 # App.Farspark.build_url(
 #   "https://myawesomedomain.com/raw-image.png",
-#   %{resize: "fit", width: 1000, height: 400, enlarge: 0, extension: "jpg"}
+#   %{resize: "fit", width: 1000, height: 400, enlarge: 0, index: 0, extension: "jpg"}
 # )
