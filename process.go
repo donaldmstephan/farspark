@@ -202,32 +202,36 @@ func processGLTF(data []byte, baseURL *url.URL, serverURL *url.URL) ([]byte, err
 		return nil, err
 	}
 
-	images := model["images"].([]interface{})
-	for _, v := range images {
-		image := v.(map[string]interface{})
-		oldURL, err := url.Parse(image["uri"].(string))
-		if err != nil {
-			return nil, err
+	switch images := model["images"].(type) {
+		case []interface{}:
+		for _, v := range images {
+			image := v.(map[string]interface{})
+			oldURL, err := url.Parse(image["uri"].(string))
+			if err != nil {
+				return nil, err
+			}
+			newURL, err := transformSubresourceURL(oldURL, baseURL, serverURL)
+			if err != nil {
+				return nil, err
+			}
+			image["uri"] = newURL.String()
 		}
-		newURL, err := transformSubresourceURL(oldURL, baseURL, serverURL)
-		if err != nil {
-			return nil, err
-		}
-		image["uri"] = newURL.String()
 	}
 
-	buffers := model["buffers"].([]interface{})
-	for _, v := range buffers {
-		buffer := v.(map[string]interface{})
-		oldURL, err := url.Parse(buffer["uri"].(string))
-		if err != nil {
-			return nil, err
+	switch buffers := model["buffers"].(type) {
+		case []interface{}:
+		for _, v := range buffers {
+			buffer := v.(map[string]interface{})
+			oldURL, err := url.Parse(buffer["uri"].(string))
+			if err != nil {
+				return nil, err
+			}
+			newURL, err := transformSubresourceURL(oldURL, baseURL, serverURL)
+			if err != nil {
+				return nil, err
+			}
+			buffer["uri"] = newURL.String()
 		}
-		newURL, err := transformSubresourceURL(oldURL, baseURL, serverURL)
-		if err != nil {
-			return nil, err
-		}
-		buffer["uri"] = newURL.String()
 	}
 
 	result, err := json.Marshal(model)
