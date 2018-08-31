@@ -55,8 +55,10 @@ func (r *netReader) GrowBuf(s int) {
 
 func initDownloading() {
 	transport := &http.Transport{
-		Proxy:             http.ProxyFromEnvironment,
-		DisableKeepAlives: true,
+		Proxy:               http.ProxyFromEnvironment,
+		DisableKeepAlives:   true,
+		MaxIdleConns:        100,
+		MaxIdleConnsPerHost: 100,
 	}
 	downloadClient = &http.Client{
 		Timeout:   time.Duration(conf.DownloadTimeout) * time.Second,
