@@ -20,13 +20,9 @@ $ go get -f -u github.com/MozillaReality/farspark
 
 Farspark publishes a Habitat plan for its installation, and is the method we use to deploy farspark for [Hubs](https://hubs.mozilla.com).
 
-## Features
-
-Farspark's features are largely a superset of imgproxy's.
-
 #### Configuration
 
-Farspark supports most [imgproxy configuration options](https://github.com/DarthSim/imgproxy/blob/master/README.md#configuration), plus:
+Farspark supports a number of [imgproxy configuration options](https://github.com/DarthSim/imgproxy/blob/master/README.md#configuration), plus:
 
 * `FARSPARK_ALLOW_ORIGINS` - when set, enables CORS headers with provided list of comma-separated origins. CORS headers are disabled by default.
 * `FARSPARK_SERVER_URL` - The URL of this server; used for rewriting URLs for asset subresources, i.e. in GLTFs.
@@ -35,7 +31,7 @@ Farspark supports most [imgproxy configuration options](https://github.com/Darth
 
 #### Processing methods
 
-Farspark supports most [imgproxy resizing types](https://github.com/DarthSim/imgproxy/blob/master/README.md#resizing-types), plus:
+In place of imgproxy's resizing types, Farspark supports:
 
 * `extract` — does not perform any image transformations, but extracts a single page or frame from an indexable media as an image (right now video and PDFs are supported.)
 * `raw` — performs no extraction or processing but streams the media through as-is as a proxy (this can be used to simply add CORS headers.) Note that when `raw` is specified, you can also perform an HTTP `HEAD` request to just fetch the remote HTTP headers.
