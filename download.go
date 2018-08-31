@@ -58,9 +58,6 @@ func initDownloading() {
 		Proxy:             http.ProxyFromEnvironment,
 		DisableKeepAlives: true,
 	}
-	if conf.LocalFileSystemRoot != "" {
-		transport.RegisterProtocol("local", http.NewFileTransport(http.Dir(conf.LocalFileSystemRoot)))
-	}
 	downloadClient = &http.Client{
 		Timeout:   time.Duration(conf.DownloadTimeout) * time.Second,
 		Transport: transport,
@@ -143,9 +140,8 @@ func shouldCacheMediaType(t mediaType) bool {
 }
 
 func downloadMedia(url string) ([]byte, mediaType, error) {
-	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
 	sha256 := sha256.New()
-	sha256.Write([]byte(fullURL))
+	sha256.Write([]byte(url))
 	sha256.Write([]byte("src"))
 	srcCacheKey := base64.URLEncoding.EncodeToString(sha256.Sum(nil))
 
@@ -157,7 +153,7 @@ func downloadMedia(url string) ([]byte, mediaType, error) {
 
 		return readAndCheckMediaBytes(bytes)
 	} else {
-		res, err := downloadClient.Get(fullURL)
+		res, err := downloadClient.Get(url)
 		if err != nil {
 			return nil, UNKNOWN, err
 		}
@@ -179,9 +175,7 @@ func downloadMedia(url string) ([]byte, mediaType, error) {
 }
 
 func streamMedia(url string, incomingRequest *http.Request) (*http.Response, error) {
-	fullURL := fmt.Sprintf("%s%s", conf.BaseURL, url)
-
-	outgoingRequest, err := http.NewRequest(incomingRequest.Method, fullURL, nil)
+	outgoingRequest, err := http.NewRequest(incomingRequest.Method, url, nil)
 
 	if err != nil {
 		return nil, err

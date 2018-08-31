@@ -24,75 +24,49 @@ const (
 	PNG
 	WEBP
 	GIF
-	WEBM
-	MP4
-	MOV
-	OGG
 	PDF
 )
 
+// Map from URL extension to inferred output media type.
 var mediaTypes = map[string]mediaType{
 	"JPG":  JPEG,
 	"JPEG": JPEG,
 	"PNG":  PNG,
-	"WEBP": WEBP,
-	"MP4":  MP4,
-	"MOV":  MOV,
-	"GIF":  GIF,
-	"WEBM": WEBM,
-	"OGG":  OGG,
-	"PDF":  PDF,
 }
 
+// Map from output media type to Lilliput output file type identifier.
 var outputFileTypes = map[mediaType]string{
 	JPEG: ".jpeg",
 	PNG:  ".png",
-	WEBP: ".webp",
-	GIF:  ".gif",
+}
+
+// Map from output media type to Ghostscript output device identifier.
+var outputFileDevices = map[mediaType]string{
+	JPEG: "jpeg",
+	PNG:  "png16m",
 }
 
 var EncodeOptions = map[mediaType]map[int]int{
 	JPEG: map[int]int{lilliput.JpegQuality: 85},
 	PNG:  map[int]int{lilliput.PngCompression: 7},
-	WEBP: map[int]int{lilliput.WebpQuality: 85},
-}
-
-var lilliputSupportSave = map[mediaType]bool{
-	JPEG: true,
-	PNG:  true,
-	GIF:  true,
-	WEBP: true,
 }
 
 type processingMethod int
 
 const (
-	Fit processingMethod = iota
-	Fill
+	Raw processingMethod = iota
 	Extract
-	Raw
 )
 
 var processingMethods = map[string]processingMethod{
-	"fit":     Fit,
-	"fill":    Fill,
 	"extract": Extract,
 	"raw":     Raw,
 }
 
-var resizeOpSizeMethods = map[processingMethod]lilliput.ImageOpsSizeMethod{
-	Fit:     lilliput.ImageOpsFit,
-	Fill:    lilliput.ImageOpsResize,
-	Extract: lilliput.ImageOpsNoResize,
-}
-
 type processingOptions struct {
-	Method  processingMethod
-	Width   int
-	Height  int
-	Enlarge bool
-	Format  mediaType
-	Index   int
+	Method processingMethod
+	Format mediaType
+	Index  int
 }
 
 type OutputBuffer struct {
@@ -120,7 +94,7 @@ func getMaxIndexCacheKey(url string) string {
 	return getIndexCacheKey(url, 0, "max_index")
 }
 
-func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
+func extractPDFPage(data []byte, url string, po processingOptions) ([]byte, int, error) {
 	scratchDir, err := ioutil.TempDir("", "farspark-scratch")
 
 	if err != nil {
@@ -130,7 +104,7 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 	defer os.RemoveAll(scratchDir)
 
 	inFile := fmt.Sprintf("%s/in.pdf", scratchDir)
-	outFile := fmt.Sprintf("%s/out.png", scratchDir)
+	outFile := fmt.Sprintf("%s/out", scratchDir)
 
 	if err := ioutil.WriteFile(inFile, data, 0600); err != nil {
 		return nil, 0, errors.New("Error writing temporary PDF file")
@@ -157,10 +131,10 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 
 	args := []string{
 		"gs",
-		"-sDEVICE=png16m",
+		fmt.Sprintf("-sDEVICE=%s", outputFileDevices[po.Format]),
 		fmt.Sprintf("-sOutputFile=%s", outFile),
-		fmt.Sprintf("-dFirstPage=%d", index+1),
-		fmt.Sprintf("-dLastPage=%d", index+1),
+		fmt.Sprintf("-dFirstPage=%d", po.Index+1),
+		fmt.Sprintf("-dLastPage=%d", po.Index+1),
 		"-dNOPAUSE",
 		"-r144",
 		inFile,
@@ -192,7 +166,7 @@ func extractPDFPage(data []byte, url string, index int) ([]byte, int, error) {
 	outBytes, err := ioutil.ReadAll(outFilePtr)
 
 	if err == nil && farsparkCache != nil {
-		contentsCacheKey := getIndexContentsCacheKey(url, index)
+		contentsCacheKey := getIndexContentsCacheKey(url, po.Index)
 		maxIndexCacheKey := getMaxIndexCacheKey(url)
 
 		farsparkCache.Write(contentsCacheKey, outBytes)
@@ -300,24 +274,11 @@ func processImage(data []byte, po processingOptions, t *timer) ([]byte, error) {
 		outputBufferPool <- outputBuffer
 	}()
 
-	imageResizeOp := resizeOpSizeMethods[po.Method]
-
-	// Ensure we won't crop out of bounds
-	if !po.Enlarge || imageResizeOp == lilliput.ImageOpsNoResize {
-		if imgWidth < po.Width {
-			po.Width = imgWidth
-		}
-
-		if imgHeight < po.Height {
-			po.Height = imgHeight
-		}
-	}
-
 	opts := &lilliput.ImageOptions{
 		FileType:             outputFileTypes[po.Format],
-		Width:                po.Width,
-		Height:               po.Height,
-		ResizeMethod:         imageResizeOp,
+		Width:                imgWidth,
+		Height:               imgHeight,
+		ResizeMethod:         lilliput.ImageOpsNoResize,
 		NormalizeOrientation: true,
 		EncodeOptions:        EncodeOptions[po.Format],
 	}
@@ -336,16 +297,8 @@ func processMedia(data []byte, url string, mtype mediaType, po processingOptions
 
 	switch mtype {
 	case PDF:
-		pdfImageData, extractedPageCount, err := extractPDFPage(data, url, po.Index)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		t.Check()
-
-		outputImg, err := processImage(pdfImageData, po, t)
-		return outputImg, extractedPageCount, err
-
+		outputImg, maxIndex, err := extractPDFPage(data, url, po)
+		return outputImg, maxIndex, err
 	default:
 		outputImg, err := processImage(data, po, t)
 		return outputImg, 1, err

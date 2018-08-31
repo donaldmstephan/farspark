@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -56,15 +55,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, fmt.Errorf("Invalid resize type: %s", parts[1])
 	}
 
-	if po.Width, err = strconv.Atoi(parts[2]); err != nil {
-		return "", po, fmt.Errorf("Invalid width: %s", parts[2])
-	}
-
-	if po.Height, err = strconv.Atoi(parts[3]); err != nil {
-		return "", po, fmt.Errorf("Invalid height: %s", parts[3])
-	}
-
-	po.Enlarge = parts[4] != "0"
+	// path parts 2-4 correspond to obsolete image transformation options (width, height, enlarge)
 
 	if po.Index, err = strconv.Atoi(parts[5]); err != nil {
 		return "", po, fmt.Errorf("Invalid index: %s", parts[5])
@@ -78,10 +69,6 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		po.Format = f
 	} else {
 		return "", po, fmt.Errorf("Invalid image format: %s", filenameParts[1])
-	}
-
-	if !lilliputSupportSave[po.Format] {
-		return "", po, errors.New("Resulting image type not supported")
 	}
 
 	filename, err := base64.RawURLEncoding.DecodeString(filenameParts[0])
@@ -163,13 +150,6 @@ func respondWithError(reqID string, rw http.ResponseWriter, err farsparkError) {
 	rw.Write([]byte(err.PublicMessage))
 }
 
-func checkSecret(s string) bool {
-	if len(conf.Secret) == 0 {
-		return true
-	}
-	return strings.HasPrefix(s, "Bearer ") && subtle.ConstantTimeCompare([]byte(strings.TrimPrefix(s, "Bearer ")), []byte(conf.Secret)) == 1
-}
-
 func (h *httpHandler) lock() {
 	h.sem <- struct{}{}
 }
@@ -207,10 +187,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
 		panic(invalidMethodErr)
-	}
-
-	if !checkSecret(r.Header.Get("Authorization")) {
-		panic(invalidSecretErr)
 	}
 
 	h.lock()
@@ -267,17 +243,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 			b = downloadBytes
 			mtype = downloadMediaType
-		}
-
-		t.Check()
-
-		if conf.ETagEnabled {
-			eTag := calcETag(b, &procOpt)
-			rw.Header().Set("ETag", eTag)
-
-			if eTag == r.Header.Get("If-None-Match") {
-				panic(notModifiedErr)
-			}
 		}
 
 		t.Check()

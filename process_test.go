@@ -25,9 +25,9 @@ func loadTestData(t *testing.T, inFile string, outFile string) ([]byte, []byte) 
 
 func Test_PNG_PNG(t *testing.T) {
 	in, out := loadTestData(t, "in0.png", "out0.png")
-	po := processingOptions{Method: Fit, Width: 100, Height: 200, Enlarge: true, Format: PNG, Index: 0}
+	po := processingOptions{Method: Extract, Format: PNG, Index: 0}
 	timer := startTimer(time.Duration(10)*time.Second, "Processing")
-	result, err := processImage(in, po, timer)
+	result, _, err := processMedia(in, "dummy", PNG, po, timer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +38,7 @@ func Test_PNG_PNG(t *testing.T) {
 
 func Test_PDF_PNG(t *testing.T) {
 	in, out := loadTestData(t, "in1.pdf", "out1.png")
-	po := processingOptions{Method: Extract, Width: 0, Height: 0, Enlarge: false, Format: PNG, Index: 3}
+	po := processingOptions{Method: Extract, Format: PNG, Index: 3}
 	timer := startTimer(time.Duration(10)*time.Second, "Processing")
 	result, _, err := processMedia(in, "dummy", PDF, po, timer)
 	if err != nil {
