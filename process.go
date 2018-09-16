@@ -177,17 +177,11 @@ func extractPDFPage(data []byte, url string, po processingOptions) ([]byte, int,
 }
 
 func generateFarsparkURL(targetURL *url.URL, serverURL *url.URL) (*url.URL, error) {
-	rawPath := "/raw/0/0/0/0/" + base64.RawURLEncoding.EncodeToString([]byte(targetURL.String()))
-	token, err := signPath(rawPath)
+	path, err := url.Parse("/0/raw/0/0/0/0/" + base64.RawURLEncoding.EncodeToString([]byte(targetURL.String())))
 	if err != nil {
-		return targetURL, err
+		return nil, err
 	}
-	signedURL, err := url.Parse("/" + token + rawPath)
-	if err != nil {
-		return targetURL, err
-	}
-
-	return serverURL.ResolveReference(signedURL), nil
+	return serverURL.ResolveReference(path), nil
 }
 
 func transformSubresourceURL(subresourceURL *url.URL, baseURL *url.URL, serverURL *url.URL) (*url.URL, error) {

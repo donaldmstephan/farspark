@@ -43,11 +43,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, errors.New("Invalid path")
 	}
 
-	token := parts[0]
-
-	if err = validatePath(token, strings.TrimPrefix(path, fmt.Sprintf("/%s", token))); err != nil {
-		return "", po, err
-	}
+	// path part 0 corresponds to signature of rest of path, which we no longer care about
 
 	if r, ok := processingMethods[parts[1]]; ok {
 		po.Method = r

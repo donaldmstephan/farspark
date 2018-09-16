@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"github.com/peterbourgon/diskv"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -56,42 +53,6 @@ func boolEnvConfig(b *bool, name string) {
 	}
 }
 
-func hexEnvConfig(b *[]byte, name string) {
-	var err error
-
-	if env := os.Getenv(name); len(env) > 0 {
-		if *b, err = hex.DecodeString(env); err != nil {
-			log.Fatalf("%s expected to be hex-encoded string\n", name)
-		}
-	}
-}
-
-func hexFileConfig(b *[]byte, filepath string) {
-	if len(filepath) == 0 {
-		return
-	}
-
-	f, err := os.Open(filepath)
-	if err != nil {
-		log.Fatalf("Can't open file %s\n", filepath)
-	}
-
-	src, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	src = bytes.TrimSpace(src)
-
-	dst := make([]byte, hex.DecodedLen(len(src)))
-	n, err := hex.Decode(dst, src)
-	if err != nil {
-		log.Fatalf("%s expected to contain hex-encoded string\n", filepath)
-	}
-
-	*b = dst[:n]
-}
-
 type config struct {
 	Bind            string
 	ReadTimeout     int
@@ -106,9 +67,6 @@ type config struct {
 	MaxSrcResolution int
 
 	GZipCompression int
-
-	Key  []byte
-	Salt []byte
 
 	AllowOrigins []string
 
@@ -145,8 +103,6 @@ func initCache() {
 }
 
 func init() {
-	keypath := flag.String("keypath", "", "path of the file with hex-encoded key")
-	saltpath := flag.String("saltpath", "", "path of the file with hex-encoded salt")
 	flag.Parse()
 
 	if port := os.Getenv("PORT"); len(port) > 0 {
@@ -167,25 +123,12 @@ func init() {
 
 	intEnvConfig(&conf.GZipCompression, "FARSPARK_GZIP_COMPRESSION")
 
-	hexEnvConfig(&conf.Key, "FARSPARK_KEY")
-	hexEnvConfig(&conf.Salt, "FARSPARK_SALT")
-
-	hexFileConfig(&conf.Key, *keypath)
-	hexFileConfig(&conf.Salt, *saltpath)
-
 	strSliceEnvConfig(&conf.AllowOrigins, "FARSPARK_ALLOW_ORIGINS")
 
 	strEnvConfig(&conf.CacheRoot, "FARSPARK_CACHE_ROOT")
 	intEnvConfig(&conf.CacheSize, "FARSPARK_CACHE_SIZE")
 
 	urlEnvConfig(&conf.ServerURL, "FARSPARK_SERVER_URL")
-
-	if len(conf.Key) == 0 {
-		log.Fatalln("Key is not defined")
-	}
-	if len(conf.Salt) == 0 {
-		log.Fatalln("Salt is not defined")
-	}
 
 	if len(conf.Bind) == 0 {
 		log.Fatalln("Bind address is not defined")
