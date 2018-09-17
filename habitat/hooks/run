@@ -3,8 +3,6 @@
 set -e
 exec 2>&1
 
-export FARSPARK_KEY={{ cfg.signature.key }}
-export FARSPARK_SALT={{ cfg.signature.salt }}
 export FARSPARK_BIND={{ cfg.server.bind }}
 export FARSPARK_READ_TIMEOUT={{ cfg.server.read_timeout }}
 export FARSPARK_WRITE_TIMEOUT={{ cfg.server.write_timeout }}
