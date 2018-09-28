@@ -25,6 +25,7 @@ const (
 	WEBP
 	GIF
 	PDF
+	GLTF
 )
 
 // Map from URL extension to inferred output media type.
@@ -32,6 +33,7 @@ var mediaTypes = map[string]mediaType{
 	"JPG":  JPEG,
 	"JPEG": JPEG,
 	"PNG":  PNG,
+	"GLTF": GLTF,
 }
 
 // Map from output media type to Lilliput output file type identifier.
@@ -197,7 +199,7 @@ func processGLTF(data []byte, baseURL *url.URL, serverURL *url.URL) ([]byte, err
 	}
 
 	switch images := model["images"].(type) {
-		case []interface{}:
+	case []interface{}:
 		for _, v := range images {
 			image := v.(map[string]interface{})
 			oldURL, err := url.Parse(image["uri"].(string))
@@ -213,7 +215,7 @@ func processGLTF(data []byte, baseURL *url.URL, serverURL *url.URL) ([]byte, err
 	}
 
 	switch buffers := model["buffers"].(type) {
-		case []interface{}:
+	case []interface{}:
 		for _, v := range buffers {
 			buffer := v.(map[string]interface{})
 			oldURL, err := url.Parse(buffer["uri"].(string))

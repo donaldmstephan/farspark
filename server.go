@@ -22,6 +22,7 @@ var mimes = map[mediaType]string{
 	JPEG: "image/jpeg",
 	PNG:  "image/png",
 	WEBP: "image/webp",
+	GLTF: "model/gltf+json",
 }
 
 type httpHandler struct {
@@ -293,6 +294,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 				panic(newError(500, err.Error(), "Error occurred while transforming GLTF"))
 			}
 			writeCORS(r, rw)
+			procOpt.Format = mediaTypes["GLTF"]
 			respondWithMedia(reqID, r, rw, transformed, mediaURL, procOpt, t.Since())
 		} else {
 			copyHeader(rw.Header(), res.Header)
