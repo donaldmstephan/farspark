@@ -279,6 +279,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		expectBody := r.Method != http.MethodHead && r.Method != http.MethodOptions
 		shouldRewrite := conf.ServerURL != nil
 		if isGLTF && expectBody && shouldRewrite {
+			t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 			contents, err := ioutil.ReadAll(body)
 			if err != nil {
 				panic(newError(500, err.Error(), "Error occurred while reading content"))
@@ -291,12 +292,13 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(newError(500, err.Error(), "Error occurred while transforming GLTF"))
 			}
-			body = ioutil.NopCloser(bytes.NewReader(transformed))
+			writeCORS(r, rw)
+			respondWithMedia(reqID, r, rw, transformed, mediaURL, procOpt, t.Since())
+		} else {
+			copyHeader(rw.Header(), res.Header)
+			writeCORS(r, rw)
+			rw.WriteHeader(res.StatusCode)
+			io.Copy(rw, body)
 		}
-
-		copyHeader(rw.Header(), res.Header)
-		writeCORS(r, rw)
-		rw.WriteHeader(res.StatusCode)
-		io.Copy(rw, body)
 	}
 }
