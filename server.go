@@ -111,11 +111,17 @@ func writeCORS(r *http.Request, rw http.ResponseWriter) {
 	rw.Header().Set("Access-Control-Expose-Headers", "Age, Date, Content-Length, Content-Range, X-Content-Duration, X-Content-Index, X-Max-Content-Index, X-Cache, X-Varnish")
 }
 
+func addCacheControlHeadersIfMissing(header http.Header) {
+	if header.Get("Expires") == "" && header.Get("Cache-Control") == "" {
+		header.Set("Expires", time.Now().Add(time.Second*time.Duration(conf.TTL)).Format(http.TimeFormat))
+		header.Set("Cache-Control", fmt.Sprintf("max-age=%d", conf.TTL))
+	}
+}
+
 func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, mediaURL string, po processingOptions, duration time.Duration) {
 	gzipped := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && conf.GZipCompression > 0
 
-	rw.Header().Set("Expires", time.Now().Add(time.Second*time.Duration(conf.TTL)).Format(http.TimeFormat))
-	rw.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", conf.TTL))
+	addCacheControlHeadersIfMissing(rw.Header())
 	rw.Header().Set("Content-Type", mimes[po.Format])
 
 	dataToRespond := data
@@ -280,7 +286,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		expectBody := r.Method != http.MethodHead && r.Method != http.MethodOptions
 		shouldRewrite := conf.ServerURL != nil
 		if isGLTF && expectBody && shouldRewrite {
-			t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 			contents, err := ioutil.ReadAll(body)
 			if err != nil {
 				panic(newError(500, err.Error(), "Error occurred while reading content"))
@@ -293,14 +298,13 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				panic(newError(500, err.Error(), "Error occurred while transforming GLTF"))
 			}
-			writeCORS(r, rw)
-			procOpt.Format = mediaTypes["GLTF"]
-			respondWithMedia(reqID, r, rw, transformed, mediaURL, procOpt, t.Since())
-		} else {
-			copyHeader(rw.Header(), res.Header)
-			writeCORS(r, rw)
-			rw.WriteHeader(res.StatusCode)
-			io.Copy(rw, body)
+			body = ioutil.NopCloser(bytes.NewReader(transformed))
 		}
+
+		copyHeader(rw.Header(), res.Header)
+		addCacheControlHeadersIfMissing(rw.Header()) // If origin has no cache control, we assume farspark CDN will cache.
+		writeCORS(r, rw)
+		rw.WriteHeader(res.StatusCode)
+		io.Copy(rw, body)
 	}
 }
