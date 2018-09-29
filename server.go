@@ -301,6 +301,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		}
 
 		copyHeader(rw.Header(), res.Header)
+		rw.Header().Set("Server", "Farspark")
 		addCacheControlHeadersIfMissing(rw.Header()) // If origin has no cache control, we assume farspark CDN will cache.
 		writeCORS(r, rw)
 		rw.WriteHeader(res.StatusCode)
