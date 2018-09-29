@@ -162,7 +162,7 @@ func (h *httpHandler) unlock() {
 
 func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
-		if k == "set-cookie" || k == "set-cookie2" {
+		if k == "set-cookie" || k == "set-cookie2" || strings.HasPrefix(k, "x-amz") || strings.HasPrefix(k, "X-Amz") {
 			continue
 		}
 
