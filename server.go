@@ -113,7 +113,6 @@ func writeCORS(r *http.Request, rw http.ResponseWriter) {
 
 func addCacheControlHeadersIfMissing(header http.Header) {
 	if header.Get("Expires") == "" && header.Get("Cache-Control") == "" {
-		header.Set("Expires", time.Now().Add(time.Second*time.Duration(conf.TTL)).Format(http.TimeFormat))
 		header.Set("Cache-Control", fmt.Sprintf("public, max-age=%d", conf.TTL))
 	}
 }
