@@ -58,7 +58,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, fmt.Errorf("Invalid index: %s", parts[5])
 	}
 
-	filenameParts := strings.Split(strings.Join(parts[6:], ""), ".")
+	filenameParts := strings.Split(strings.Join(parts[6:], "/"), ".")
 
 	if len(filenameParts) < 2 {
 		po.Format = mediaTypes["JPG"]
