@@ -10,3 +10,4 @@ import:
 - package: github.com/google/btree
 - package: github.com/gfodor/go-ghostscript
 - package: rsc.io/pdf
+- package: gopkg.in/alexcesaro/statsd.v2

@@ -1,3 +1,8 @@
+## v1.4
+
+- Added GLTF rewriting
+- Added StatsD telemetry
+
 ## v1.3
 
 - Added PDF extraction and indexing

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"gopkg.in/alexcesaro/statsd.v2"
 	"io"
 	"io/ioutil"
 	"log"
@@ -174,6 +175,8 @@ func copyHeader(dst, src http.Header) {
 
 func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	reqID, _ := nanoid.Nanoid()
+	stats, err := statsd.New()
+	defer stats.Close()
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -182,6 +185,8 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			} else {
 				respondWithError(reqID, rw, newUnexpectedError(r.(error), 4))
 			}
+
+			stats.Increment("farspark.request_errors")
 		}
 	}()
 
@@ -220,6 +225,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		var mtype mediaType = UNKNOWN
 
 		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
+		tProcess := stats.NewTiming()
 
 		contentsKey := getIndexContentsCacheKey(mediaURL, procOpt.Index)
 
@@ -252,6 +258,8 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		processedBytes, processedMaxIndex, err := processMedia(b, mediaURL, mtype, procOpt, t)
 
 		if err != nil {
+			stats.Increment("farspark.process_errors")
+
 			panic(newError(500, err.Error(), "Error occurred while processing media"))
 		}
 
@@ -271,7 +279,10 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		}
 
 		respondWithMedia(reqID, r, rw, b, mediaURL, procOpt, t.Since())
+		stats.Increment("farspark.process_ok")
+		tProcess.Send("farspark.process_time")
 	} else {
+		tRaw := stats.NewTiming()
 		res, err := streamMedia(mediaURL, r)
 
 		if err != nil {
@@ -285,8 +296,10 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		expectBody := r.Method != http.MethodHead && r.Method != http.MethodOptions
 		shouldRewrite := conf.ServerURL != nil
 		if isGLTF && expectBody && shouldRewrite {
+			tGLTF := stats.NewTiming()
 			contents, err := ioutil.ReadAll(body)
 			if err != nil {
+				stats.Increment("farspark.gltf_read_errors")
 				panic(newError(500, err.Error(), "Error occurred while reading content"))
 			}
 			baseURL, err := url.Parse(mediaURL)
@@ -295,9 +308,12 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			}
 			transformed, err := processGLTF(contents, baseURL, conf.ServerURL)
 			if err != nil {
+				stats.Increment("farspark.gltf_xform_errors")
 				panic(newError(500, err.Error(), "Error occurred while transforming GLTF"))
 			}
 			body = ioutil.NopCloser(bytes.NewReader(transformed))
+			tGLTF.Send("farspark.gltf_process_time")
+			stats.Increment("farspark.gltf_process_ok")
 		}
 
 		copyHeader(rw.Header(), res.Header)
@@ -306,5 +322,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		writeCORS(r, rw)
 		rw.WriteHeader(res.StatusCode)
 		io.Copy(rw, body)
+		stats.Increment("farspark.raw_ok")
+		tRaw.Send("farspark.raw_time")
 	}
 }
