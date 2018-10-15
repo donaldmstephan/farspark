@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/discordapp/lilliput"
 	"github.com/gfodor/go-ghostscript/ghostscript"
 	"io/ioutil"
 	"net/url"
@@ -16,41 +15,10 @@ import (
 	"sync"
 )
 
-type mediaType int
-
-const (
-	UNKNOWN mediaType = iota
-	JPEG
-	PNG
-	WEBP
-	GIF
-	PDF
-	GLTF
-)
-
-// Map from URL extension to inferred output media type.
-var mediaTypes = map[string]mediaType{
-	"JPG":  JPEG,
-	"JPEG": JPEG,
-	"PNG":  PNG,
-	"GLTF": GLTF,
-}
-
-// Map from output media type to Lilliput output file type identifier.
-var outputFileTypes = map[mediaType]string{
-	JPEG: ".jpeg",
-	PNG:  ".png",
-}
-
-// Map from output media type to Ghostscript output device identifier.
-var outputFileDevices = map[mediaType]string{
-	JPEG: "jpeg",
-	PNG:  "png16m",
-}
-
-var EncodeOptions = map[mediaType]map[int]int{
-	JPEG: map[int]int{lilliput.JpegQuality: 85},
-	PNG:  map[int]int{lilliput.PngCompression: 7},
+// Map from output MIME type to Ghostscript output device identifier.
+var outputFileDevices = map[mimeType]string{
+	"image/jpeg": "jpeg",
+	"image/png":  "png16m",
 }
 
 type processingMethod int
@@ -67,16 +35,10 @@ var processingMethods = map[string]processingMethod{
 
 type processingOptions struct {
 	Method processingMethod
-	Format mediaType
+	Format mimeType
 	Index  int
 }
 
-type OutputBuffer struct {
-	buf []byte
-	ops *lilliput.ImageOps
-}
-
-var outputBufferPool = make(chan *OutputBuffer, conf.Concurrency)
 var gsMutex = &sync.Mutex{}
 var gs *ghostscript.Ghostscript = nil
 
@@ -235,72 +197,4 @@ func processGLTF(data []byte, baseURL *url.URL, serverURL *url.URL) ([]byte, err
 		return nil, err
 	}
 	return result, nil
-}
-
-func processImage(data []byte, po processingOptions, t *timer) ([]byte, error) {
-
-	decoder, err := lilliput.NewDecoder(data)
-	defer decoder.Close()
-
-	header, err := decoder.Header()
-
-	if err != nil {
-		return nil, errors.New("Error reading image header")
-	}
-
-	imgWidth := header.Width()
-	imgHeight := header.Height()
-
-	t.Check()
-
-	var outputBuffer *OutputBuffer
-
-	select {
-	case outputBuffer = <-outputBufferPool:
-	default:
-		outputBuffer = &OutputBuffer{
-			buf: make([]byte, 50*1024*1024),
-			ops: lilliput.NewImageOps(8192),
-		}
-	}
-
-	t.Check()
-
-	ops := outputBuffer.ops
-	outputImg := outputBuffer.buf
-
-	defer func() {
-		ops.Clear()
-		outputBufferPool <- outputBuffer
-	}()
-
-	opts := &lilliput.ImageOptions{
-		FileType:             outputFileTypes[po.Format],
-		Width:                imgWidth,
-		Height:               imgHeight,
-		ResizeMethod:         lilliput.ImageOpsNoResize,
-		NormalizeOrientation: true,
-		EncodeOptions:        EncodeOptions[po.Format],
-	}
-
-	if outputImg, err = ops.Transform(decoder, opts, outputImg); err != nil {
-		return nil, err
-	}
-
-	t.Check()
-
-	return outputImg, nil
-}
-
-func processMedia(data []byte, url string, mtype mediaType, po processingOptions, t *timer) ([]byte, int, error) {
-	t.Check()
-
-	switch mtype {
-	case PDF:
-		outputImg, maxIndex, err := extractPDFPage(data, url, po)
-		return outputImg, maxIndex, err
-	default:
-		outputImg, err := processImage(data, po, t)
-		return outputImg, 1, err
-	}
 }

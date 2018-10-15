@@ -19,13 +19,6 @@ import (
 	nanoid "github.com/matoous/go-nanoid"
 )
 
-var mimes = map[mediaType]string{
-	JPEG: "image/jpeg",
-	PNG:  "image/png",
-	WEBP: "image/webp",
-	GLTF: "model/gltf+json",
-}
-
 type httpHandler struct {
 	sem chan struct{}
 }
@@ -59,20 +52,13 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 		return "", po, fmt.Errorf("Invalid index: %s", parts[5])
 	}
 
-	filenameParts := strings.Split(strings.Join(parts[6:], "/"), ".")
-
-	if len(filenameParts) < 2 {
-		po.Format = mediaTypes["JPG"]
-	} else if f, ok := mediaTypes[strings.ToUpper(filenameParts[1])]; ok {
-		po.Format = f
-	} else {
-		return "", po, fmt.Errorf("Invalid image format: %s", filenameParts[1])
-	}
-
-	filename, err := base64.RawURLEncoding.DecodeString(filenameParts[0])
+	filename, err := base64.RawURLEncoding.DecodeString(strings.Join(parts[6:], "/"))
 	if err != nil {
 		return "", po, errors.New("Invalid filename encoding")
 	}
+
+	// always output PNGs for now (this applies to extracted pages from PDFs)
+	po.Format = "image/png"
 
 	return string(filename), po, nil
 }
@@ -122,7 +108,7 @@ func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, dat
 	gzipped := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && conf.GZipCompression > 0
 
 	addCacheControlHeadersIfMissing(rw.Header())
-	rw.Header().Set("Content-Type", mimes[po.Format])
+	rw.Header().Set("Content-Type", po.Format)
 
 	dataToRespond := data
 
@@ -214,15 +200,15 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		panic(newError(404, err.Error(), "Invalid media url"))
 	}
 
-	if procOpt.Method != Raw {
-		// Only allow HEAD and OPTIONS requests for raw URLs
-		if r.Method == http.MethodHead || r.Method == http.MethodOptions {
+	if procOpt.Method == Extract {
+
+		if r.Method != http.MethodGet {
 			panic(invalidMethodErr)
 		}
 
 		var b []byte = nil
 		var maxIndex int
-		var mtype mediaType = UNKNOWN
+		var mtype mimeType = ""
 
 		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 		tProcess := stats.NewTiming()
@@ -237,25 +223,29 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 			if contentErr == nil && maxIndexErr == nil && maxIndexParseErr == nil {
 				b = outData
-				mtype = PNG
+				mtype = "image/png"
 				maxIndex = maxIndexParsed
 			}
 		}
 
 		if b == nil {
-			downloadBytes, downloadMediaType, err := downloadMedia(mediaURL)
+			downloadBytes, downloadMimeType, err := downloadMedia(mediaURL)
 
 			if err != nil {
 				panic(newError(404, err.Error(), "Media is unreachable"))
 			}
 
 			b = downloadBytes
-			mtype = downloadMediaType
+			mtype = downloadMimeType
+		}
+
+		if mtype != "application/pdf" {
+			panic(newError(400, err.Error(), "Media type has no subresources to extract"))
 		}
 
 		t.Check()
 
-		processedBytes, processedMaxIndex, err := processMedia(b, mediaURL, mtype, procOpt, t)
+		processedBytes, processedMaxIndex, err := extractPDFPage(b, mediaURL, procOpt)
 
 		if err != nil {
 			stats.Increment("farspark.process_errors")
