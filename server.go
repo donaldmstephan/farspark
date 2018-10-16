@@ -208,7 +208,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 		var b []byte = nil
 		var maxIndex int
-		var mtype mimeType = ""
 
 		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 		tProcess := stats.NewTiming()
@@ -223,39 +222,29 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 			if contentErr == nil && maxIndexErr == nil && maxIndexParseErr == nil {
 				b = outData
-				mtype = "image/png"
 				maxIndex = maxIndexParsed
 			}
-		}
-
-		if b == nil {
+		} else {
 			downloadBytes, downloadMimeType, err := downloadMedia(mediaURL)
 
 			if err != nil {
 				panic(newError(404, err.Error(), "Media is unreachable"))
 			}
 
-			b = downloadBytes
-			mtype = downloadMimeType
-		}
+			if downloadMimeType != "application/pdf" {
+				panic(newError(400, err.Error(), "Media type has no subresources to extract"))
+			}
 
-		if mtype != "application/pdf" {
-			panic(newError(400, err.Error(), "Media type has no subresources to extract"))
-		}
+			t.Check()
 
-		t.Check()
+			processedBytes, processedMaxIndex, err := extractPDFPage(downloadBytes, mediaURL, procOpt)
 
-		processedBytes, processedMaxIndex, err := extractPDFPage(b, mediaURL, procOpt)
+			if err != nil {
+				stats.Increment("farspark.process_errors")
+				panic(newError(500, err.Error(), "Error occurred while processing media"))
+			}
 
-		if err != nil {
-			stats.Increment("farspark.process_errors")
-
-			panic(newError(500, err.Error(), "Error occurred while processing media"))
-		}
-
-		b = processedBytes
-
-		if processedMaxIndex > maxIndex {
+			b = processedBytes
 			maxIndex = processedMaxIndex
 		}
 
