@@ -30,18 +30,6 @@ func newNetReader(r io.Reader) *netReader {
 	}
 }
 
-func (r *netReader) Read(p []byte) (n int, err error) {
-	n, err = r.reader.Read(p)
-	if err == nil {
-		r.buf.Write(p[:n])
-	}
-	return
-}
-
-func (r *netReader) Peek(n int) ([]byte, error) {
-	return r.reader.Peek(n)
-}
-
 func (r *netReader) ReadAll() ([]byte, error) {
 	if _, err := r.buf.ReadFrom(r.reader); err != nil {
 		return []byte{}, err
@@ -112,8 +100,11 @@ func downloadMedia(url string) ([]byte, mimeType, error) {
 		}
 
 		bytes, err := readAndCheckMediaResponse(res)
-		mimeType := http.DetectContentType(bytes)
+		if err != nil {
+			return nil, "", err
+		}
 
+		mimeType := http.DetectContentType(bytes)
 		if err == nil && shouldCacheMimeType(mimeType) && farsparkCache != nil {
 			farsparkCache.Write(srcCacheKey, bytes)
 		}
