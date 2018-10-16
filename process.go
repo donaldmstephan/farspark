@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gfodor/go-ghostscript/ghostscript"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"os"
 	"rsc.io/pdf"
@@ -69,6 +70,8 @@ func extractPDFPage(data []byte, url string, po processingOptions) ([]byte, int,
 
 	inFile := fmt.Sprintf("%s/in.pdf", scratchDir)
 	outFile := fmt.Sprintf("%s/out", scratchDir)
+
+	log.Printf("Preparing to extract page from %s into %s\n", inFile, outFile)
 
 	if err := ioutil.WriteFile(inFile, data, 0600); err != nil {
 		return nil, 0, errors.New("Error writing temporary PDF file")
