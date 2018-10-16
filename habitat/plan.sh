@@ -29,13 +29,5 @@ do_build() {
 }
 
 do_install() {
-  mkdir -p "$pkg_prefix/lib"
-  mkdir -p "$pkg_prefix/include"
-  mkdir -p "$pkg_prefix/share"
-
-  cp -r "$HAB_CACHE_SRC_PATH/scaffolding-go-gopath/src/github.com/MozillaReality/farspark/vendor/github.com/discordapp/lilliput/deps/linux/lib" "$pkg_prefix"
-  cp -r "$HAB_CACHE_SRC_PATH/scaffolding-go-gopath/src/github.com/MozillaReality/farspark/vendor/github.com/discordapp/lilliput/deps/linux/include" "$pkg_prefix"
-  cp -r "$HAB_CACHE_SRC_PATH/scaffolding-go-gopath/src/github.com/MozillaReality/farspark/vendor/github.com/discordapp/lilliput/deps/linux/share" "$pkg_prefix"
-
   do_default_install
 }

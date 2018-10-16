@@ -5,9 +5,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"fmt"
-	"github.com/discordapp/lilliput"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,6 +15,8 @@ import (
 )
 
 var downloadClient *http.Client
+
+type mimeType = string
 
 type netReader struct {
 	reader *bufio.Reader
@@ -66,82 +66,27 @@ func initDownloading() {
 	}
 }
 
-func checkTypeAndDimensions(data []byte) (mediaType, error) {
-	contentType := http.DetectContentType(data)
-
-	if contentType == "application/pdf" {
-		return PDF, nil
-	}
-
-	decoder, err := lilliput.NewDecoder(data)
-	if err != nil {
-		return UNKNOWN, err
-	}
-
-	defer decoder.Close()
-
-	header, err := decoder.Header()
-	if err != nil {
-		return UNKNOWN, errors.New("Error reading image header")
-	}
-
-	imgWidth := header.Width()
-	imgHeight := header.Height()
-	mtypeStr := decoder.Description()
-
-	mtype, mtypeOk := mediaTypes[mtypeStr]
-
-	if err != nil {
-		return UNKNOWN, err
-	}
-	if imgWidth > conf.MaxSrcDimension || imgHeight > conf.MaxSrcDimension {
-		return UNKNOWN, errors.New("Source image is too big")
-	}
-	if imgWidth*imgHeight > conf.MaxSrcResolution {
-		return UNKNOWN, errors.New("Source image is too big")
-	}
-	if !mtypeOk {
-		return UNKNOWN, errors.New("Source image type not supported")
-	}
-
-	return mtype, nil
-}
-
-func readAndCheckMediaBytes(b []byte) ([]byte, mediaType, error) {
-	mtype, err := checkTypeAndDimensions(b)
-	if err != nil {
-		return nil, UNKNOWN, err
-	}
-
-	return b, mtype, err
-}
-
-func readAndCheckMediaResponse(res *http.Response) ([]byte, mediaType, error) {
+func readAndCheckMediaResponse(res *http.Response) ([]byte, error) {
 	nr := newNetReader(res.Body)
 
 	if res.ContentLength > 0 {
 		nr.GrowBuf(int(res.ContentLength))
 	}
 
-	b, err := nr.ReadAll()
-	if err != nil {
-		return nil, UNKNOWN, err
-	}
-
-	return readAndCheckMediaBytes(b)
+	return nr.ReadAll()
 }
 
-func shouldCacheMediaType(t mediaType) bool {
+func shouldCacheMimeType(t mimeType) bool {
 	// For now, just cache PDF files locally since we re-fetch new pages over and over,
 	// and they tend to be big files
-	if t == PDF {
+	if t == "application/pdf" {
 		return true
 	}
 
 	return false
 }
 
-func downloadMedia(url string) ([]byte, mediaType, error) {
+func downloadMedia(url string) ([]byte, mimeType, error) {
 	sha256 := sha256.New()
 	sha256.Write([]byte(url))
 	sha256.Write([]byte("src"))
@@ -150,29 +95,30 @@ func downloadMedia(url string) ([]byte, mediaType, error) {
 	if farsparkCache != nil && farsparkCache.Has(srcCacheKey) {
 		bytes, err := farsparkCache.Read(srcCacheKey)
 		if err != nil {
-			return nil, UNKNOWN, err
+			return nil, "", err
 		}
 
-		return readAndCheckMediaBytes(bytes)
+		return bytes, http.DetectContentType(bytes), err
 	} else {
 		res, err := downloadClient.Get(url)
 		if err != nil {
-			return nil, UNKNOWN, err
+			return nil, "", err
 		}
 		defer res.Body.Close()
 
 		if res.StatusCode != 200 {
 			body, _ := ioutil.ReadAll(res.Body)
-			return nil, UNKNOWN, fmt.Errorf("Can't download image; Status: %d; %s", res.StatusCode, string(body))
+			return nil, "", fmt.Errorf("Can't download media; Status: %d; %s", res.StatusCode, string(body))
 		}
 
-		bytes, mediaType, err := readAndCheckMediaResponse(res)
+		bytes, err := readAndCheckMediaResponse(res)
+		mimeType := http.DetectContentType(bytes)
 
-		if err == nil && shouldCacheMediaType(mediaType) && farsparkCache != nil {
+		if err == nil && shouldCacheMimeType(mimeType) && farsparkCache != nil {
 			farsparkCache.Write(srcCacheKey, bytes)
 		}
 
-		return bytes, mediaType, err
+		return bytes, mimeType, err
 	}
 }
 

@@ -11,8 +11,6 @@ ttl = ""
 [security]
 
 allow_origins = ""
-max_src_dimension = ""
-max_src_resolution = ""
 
 [compression]
 
