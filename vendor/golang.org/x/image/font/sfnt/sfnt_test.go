@@ -7,7 +7,6 @@ package sfnt
 import (
 	"bytes"
 	"fmt"
-	"image"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -224,11 +223,9 @@ func TestMetrics(t *testing.T) {
 		font []byte
 		want font.Metrics
 	}{
-		"goregular": {goregular.TTF, font.Metrics{Height: 2367, Ascent: 1935, Descent: 432, XHeight: 1086, CapHeight: 1480,
-			CaretSlope: image.Point{X: 0, Y: 1}}},
+		"goregular": {goregular.TTF, font.Metrics{Height: 2048, Ascent: 1935, Descent: 432}},
 		// cmapTest.ttf has a non-zero lineGap.
-		"cmapTest": {cmapFont, font.Metrics{Height: 1549, Ascent: 1365, Descent: 0, XHeight: 800, CapHeight: 800,
-			CaretSlope: image.Point{X: 20, Y: 100}}},
+		"cmapTest": {cmapFont, font.Metrics{Height: 2232, Ascent: 1365, Descent: 0}},
 	}
 	var b Buffer
 	for name, tc := range testCases {
@@ -577,11 +574,11 @@ func TestTrueTypeSegments(t *testing.T) {
 		lineTo(136, 1297),
 		lineTo(136, 68),
 	}, {
-		// .null
-		// Empty glyph.
+	// .null
+	// Empty glyph.
 	}, {
-		// nonmarkingreturn
-		// Empty glyph.
+	// nonmarkingreturn
+	// Empty glyph.
 	}, {
 		// zero
 		// - contour #0
