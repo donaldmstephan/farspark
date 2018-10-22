@@ -19,6 +19,25 @@ import (
 	nanoid "github.com/matoous/go-nanoid"
 )
 
+type processingMethod int
+
+const (
+	Raw processingMethod = iota
+	Extract
+	Thumbnail
+)
+
+var processingMethods = map[string]processingMethod{
+	"extract":   Extract,
+	"thumbnail": Thumbnail,
+	"raw":       Raw,
+}
+
+type processingOptions struct {
+	Method processingMethod
+	Index  int
+}
+
 type httpHandler struct {
 	sem chan struct{}
 }
@@ -43,7 +62,7 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 	if r, ok := processingMethods[parts[1]]; ok {
 		po.Method = r
 	} else {
-		return "", po, fmt.Errorf("Invalid resize type: %s", parts[1])
+		return "", po, fmt.Errorf("Invalid transformation type: %s", parts[1])
 	}
 
 	// path parts 2-4 correspond to obsolete image transformation options (width, height, enlarge)
@@ -56,9 +75,6 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 	if err != nil {
 		return "", po, errors.New("Invalid filename encoding")
 	}
-
-	// always output PNGs for now (this applies to extracted pages from PDFs)
-	po.Format = "image/png"
 
 	return string(filename), po, nil
 }
@@ -104,11 +120,11 @@ func addCacheControlHeadersIfMissing(header http.Header) {
 	}
 }
 
-func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, mediaURL string, po processingOptions, duration time.Duration) {
+func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, mediaURL string, po processingOptions, mimeType string, duration time.Duration) {
 	gzipped := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && conf.GZipCompression > 0
 
 	addCacheControlHeadersIfMissing(rw.Header())
-	rw.Header().Set("Content-Type", po.Format)
+	rw.Header().Set("Content-Type", mimeType)
 
 	dataToRespond := data
 
@@ -200,14 +216,17 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		panic(newError(404, err.Error(), "Invalid media url"))
 	}
 
-	if procOpt.Method == Extract {
-
+	switch procOpt.Method {
+	case Thumbnail:
+		respondWithError(reqID, rw, newError(400, "Not yet implemented.", "Not yet implemented."))
+	case Extract:
 		if r.Method != http.MethodGet {
 			panic(invalidMethodErr)
 		}
 
 		var b []byte = nil
 		var maxIndex int
+		outputMimeType := "image/png"
 
 		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 		tProcess := stats.NewTiming()
@@ -237,7 +256,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 			t.Check()
 
-			processedBytes, processedMaxIndex, err := extractPDFPage(downloadBytes, mediaURL, procOpt)
+			processedBytes, processedMaxIndex, err := extractPDFPage(downloadBytes, mediaURL, procOpt.Index, outputMimeType)
 
 			if err != nil {
 				stats.Increment("farspark.process_errors")
@@ -257,10 +276,10 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			rw.Header().Set("X-Max-Content-Index", strconv.Itoa(maxIndex))
 		}
 
-		respondWithMedia(reqID, r, rw, b, mediaURL, procOpt, t.Since())
+		respondWithMedia(reqID, r, rw, b, mediaURL, procOpt, outputMimeType, t.Since())
 		stats.Increment("farspark.process_ok")
 		tProcess.Send("farspark.process_time")
-	} else {
+	case Raw:
 		tRaw := stats.NewTiming()
 		res, err := streamMedia(mediaURL, r)
 
