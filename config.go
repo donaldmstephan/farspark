@@ -18,6 +18,12 @@ func intEnvConfig(i *int, name string) {
 	}
 }
 
+func megaIntEnvConfig(f *int, name string) {
+	if env, err := strconv.ParseFloat(os.Getenv(name), 64); err == nil {
+		*f = int(env * 1000000)
+	}
+}
+
 func urlEnvConfig(u **url.URL, name string) {
 	if env, present := os.LookupEnv(name); present {
 		if url, err := url.Parse(env); err == nil {
@@ -57,6 +63,9 @@ type config struct {
 	MaxClients      int
 	TTL             int
 
+	MaxSrcDimension  int
+	MaxSrcResolution int
+
 	GZipCompression int
 
 	AllowOrigins []string
@@ -74,6 +83,8 @@ var conf = config{
 	DownloadTimeout:  5,
 	Concurrency:      runtime.NumCPU() * 2,
 	TTL:              3600,
+	MaxSrcDimension:  8192,
+	MaxSrcResolution: 16800000,
 	GZipCompression:  5,
 }
 
@@ -106,6 +117,9 @@ func init() {
 	intEnvConfig(&conf.MaxClients, "FARSPARK_MAX_CLIENTS")
 
 	intEnvConfig(&conf.TTL, "FARSPARK_TTL")
+
+	intEnvConfig(&conf.MaxSrcDimension, "FARSPARK_MAX_SRC_DIMENSION")
+	megaIntEnvConfig(&conf.MaxSrcResolution, "FARSPARK_MAX_SRC_RESOLUTION")
 
 	intEnvConfig(&conf.GZipCompression, "FARSPARK_GZIP_COMPRESSION")
 
@@ -142,6 +156,14 @@ func init() {
 
 	if conf.TTL <= 0 {
 		log.Fatalf("TTL should be greater than 0, now - %d\n", conf.TTL)
+	}
+
+	if conf.MaxSrcDimension <= 0 {
+		log.Fatalf("Max src dimension should be greater than 0, now - %d\n", conf.MaxSrcDimension)
+	}
+
+	if conf.MaxSrcResolution <= 0 {
+		log.Fatalf("Max src resolution should be greater than 0, now - %d\n", conf.MaxSrcResolution)
 	}
 
 	if conf.GZipCompression < 0 {

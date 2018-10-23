@@ -41,7 +41,7 @@ func getMaxIndexCacheKey(url string) string {
 	return getIndexCacheKey(url, 0, "max_index")
 }
 
-func extractPDFPage(data []byte, url string, index int, outputFormat string) ([]byte, int, error) {
+func extractPDFPage(data []byte, url string, index int, outputFormat mimeType) ([]byte, int, error) {
 	scratchDir, err := ioutil.TempDir("", "farspark-scratch")
 
 	if err != nil {
@@ -82,8 +82,8 @@ func extractPDFPage(data []byte, url string, index int, outputFormat string) ([]
 		"gs",
 		fmt.Sprintf("-sDEVICE=%s", outputFileDevices[outputFormat]),
 		fmt.Sprintf("-sOutputFile=%s", outFile),
-		fmt.Sprintf("-dFirstPage=%d", index),
-		fmt.Sprintf("-dLastPage=%d", index),
+		fmt.Sprintf("-dFirstPage=%d", index+1),
+		fmt.Sprintf("-dLastPage=%d", index+1),
 		"-dNOPAUSE",
 		"-r144",
 		inFile,
