@@ -66,7 +66,7 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 		FileType:             outputFileTypes[outputFormat],
 		Width:                width,
 		Height:               height,
-		ResizeMethod:         lilliput.ImageOpsResize,
+		ResizeMethod:         lilliput.ImageOpsFit,
 		NormalizeOrientation: true,
 		EncodeOptions:        EncodeOptions[outputFormat],
 	}
