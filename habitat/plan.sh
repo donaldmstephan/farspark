@@ -33,9 +33,10 @@ do_install() {
   mkdir -p "$pkg_prefix/include"
   mkdir -p "$pkg_prefix/share"
 
-  cp -r "$HAB_CACHE_SRC_PATH/scaffolding-go-gopath/src/github.com/MozillaReality/farspark/vendor/github.com/discordapp/lilliput/deps/linux/lib" "$pkg_prefix"
-  cp -r "$HAB_CACHE_SRC_PATH/scaffolding-go-gopath/src/github.com/MozillaReality/farspark/vendor/github.com/discordapp/lilliput/deps/linux/include" "$pkg_prefix"
-  cp -r "$HAB_CACHE_SRC_PATH/scaffolding-go-gopath/src/github.com/MozillaReality/farspark/vendor/github.com/discordapp/lilliput/deps/linux/share" "$pkg_prefix"
+  LILLIPUT_PATH="$HAB_CACHE_SRC_PATH/scaffolding-go-gopath/src/github.com/MozillaReality/farspark/vendor/github.com/discordapp/lilliput/deps/linux"
+  [[ -e "$LILLIPUT_PATH/lib"     ]] && cp -r "$LILLIPUT_PATH/lib"     "$pkg_prefix"
+  [[ -e "$LILLIPUT_PATH/include" ]] && cp -r "$LILLIPUT_PATH/include" "$pkg_prefix"
+  [[ -e "$LILLIPUT_PATH/share"   ]] && cp -r "$LILLIPUT_PATH/share"   "$pkg_prefix"
 
   do_default_install
 }
