@@ -28,16 +28,10 @@ Generate ID
 id, err := gonanoid.Nanoid()
 ```
 
-Generate ID with custom alphabet and length
-
-``` go
-id, err := gonanoid.Generate("abcde", 54)
-```
-
 ## Testing
 
 ``` bash
-$ go test
+$ go test -c -i -o /tmp/TestGenerate_in_gonanoid_test_gogo gonanoid
 ```
 
 ## Notice

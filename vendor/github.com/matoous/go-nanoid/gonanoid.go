@@ -5,16 +5,28 @@ import (
 	"math"
 )
 
-const (
-	defaultAlphabet = "_~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" // len=64
-	defaultSize     = 22
-	defaultMaskSize = 5
-)
+// DefaultsType is the type of the default configuration for Nanoid
+type DefaultsType struct {
+	Alphabet string
+	Size     int
+	MaskSize int
+}
+
+// GetDefaults returns the default configuration for Nanoid
+func GetDefaults() *DefaultsType {
+	return &DefaultsType{
+		Alphabet: "_~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ", // len=64
+		Size:     22,
+		MaskSize: 5,
+	}
+}
+
+var defaults = GetDefaults()
 
 func initMasks(params ...int) []uint {
 	var size int
 	if len(params) == 0 {
-		size = defaultMaskSize
+		size = defaults.MaskSize
 	} else {
 		size = params[0]
 	}
@@ -34,6 +46,14 @@ func getMask(alphabet string, masks []uint) int {
 		}
 	}
 	return 0
+}
+
+// Random generates cryptographically strong pseudo-random data.
+// The size argument is a number indicating the number of bytes to generate.
+func Random(size int) ([]byte, error) {
+	var randomBytes = make([]byte, size)
+	_, err := rand.Read(randomBytes)
+	return randomBytes, err
 }
 
 // Generate is a low-level function to change alphabet and ID size.
@@ -67,7 +87,7 @@ func Generate(alphabet string, size int) (string, error) {
 func Nanoid(param ...int) (string, error) {
 	var size int
 	if len(param) == 0 {
-		size = defaultSize
+		size = defaults.Size
 	} else {
 		size = param[0]
 	}
@@ -78,7 +98,7 @@ func Nanoid(param ...int) (string, error) {
 	}
 	id := make([]byte, size)
 	for i := 0; i < size; i++ {
-		id[i] = defaultAlphabet[bytes[i]&63]
+		id[i] = defaults.Alphabet[bytes[i]&63]
 	}
 	return string(id[:size]), nil
 }

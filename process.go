@@ -22,24 +22,6 @@ var outputFileDevices = map[mimeType]string{
 	"image/png":  "png16m",
 }
 
-type processingMethod int
-
-const (
-	Raw processingMethod = iota
-	Extract
-)
-
-var processingMethods = map[string]processingMethod{
-	"extract": Extract,
-	"raw":     Raw,
-}
-
-type processingOptions struct {
-	Method processingMethod
-	Format mimeType
-	Index  int
-}
-
 var gsMutex = &sync.Mutex{}
 var gs *ghostscript.Ghostscript = nil
 
@@ -59,7 +41,7 @@ func getMaxIndexCacheKey(url string) string {
 	return getIndexCacheKey(url, 0, "max_index")
 }
 
-func extractPDFPage(data []byte, url string, po processingOptions) ([]byte, int, error) {
+func extractPDFPage(data []byte, url string, index int, outputFormat mimeType) ([]byte, int, error) {
 	scratchDir, err := ioutil.TempDir("", "farspark-scratch")
 
 	if err != nil {
@@ -98,10 +80,10 @@ func extractPDFPage(data []byte, url string, po processingOptions) ([]byte, int,
 
 	args := []string{
 		"gs",
-		fmt.Sprintf("-sDEVICE=%s", outputFileDevices[po.Format]),
+		fmt.Sprintf("-sDEVICE=%s", outputFileDevices[outputFormat]),
 		fmt.Sprintf("-sOutputFile=%s", outFile),
-		fmt.Sprintf("-dFirstPage=%d", po.Index+1),
-		fmt.Sprintf("-dLastPage=%d", po.Index+1),
+		fmt.Sprintf("-dFirstPage=%d", index+1),
+		fmt.Sprintf("-dLastPage=%d", index+1),
 		"-dNOPAUSE",
 		"-r144",
 		inFile,
@@ -133,7 +115,7 @@ func extractPDFPage(data []byte, url string, po processingOptions) ([]byte, int,
 	outBytes, err := ioutil.ReadAll(outFilePtr)
 
 	if err == nil && farsparkCache != nil {
-		contentsCacheKey := getIndexContentsCacheKey(url, po.Index)
+		contentsCacheKey := getIndexContentsCacheKey(url, index)
 		maxIndexCacheKey := getMaxIndexCacheKey(url)
 
 		farsparkCache.Write(contentsCacheKey, outBytes)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/matoous/go-nanoid"
 )
 
@@ -11,5 +10,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Generated id: %s\n", id)
+	fmt.Printf("Generated default id: %s\n", id)
 }

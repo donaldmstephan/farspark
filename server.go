@@ -19,6 +19,32 @@ import (
 	nanoid "github.com/matoous/go-nanoid"
 )
 
+type processingMethod int
+
+const (
+	Unknown processingMethod = iota
+	Raw
+	Extract
+	Thumbnail
+)
+
+var processingMethods = map[string]processingMethod{
+	"extract":   Extract,
+	"thumbnail": Thumbnail,
+	"raw":       Raw,
+}
+
+type processingOptions struct {
+	Method processingMethod
+	Index  int
+}
+
+type thumbnailOptions struct {
+	SourceURL string
+	Width     int
+	Height    int
+}
+
 type httpHandler struct {
 	sem chan struct{}
 }
@@ -27,7 +53,60 @@ func newHTTPHandler() *httpHandler {
 	return &httpHandler{make(chan struct{}, conf.Concurrency)}
 }
 
-func parsePath(r *http.Request) (string, processingOptions, error) {
+func parseEndpoint(r *http.Request) (processingMethod, error) {
+	path := r.URL.Path
+	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+	if r, ok := processingMethods[parts[0]]; ok {
+		return r, nil
+	} else if len(parts) >= 2 {
+		if r, ok := processingMethods[parts[1]]; ok {
+			return r, nil
+		}
+	}
+	return Unknown, errors.New("Invalid endpoint.")
+}
+
+func parseThumbnailOptions(r *http.Request) (thumbnailOptions, error) {
+	var opts thumbnailOptions
+	path := r.URL.Path
+	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+
+	// path part 0 corresponds to "thumbnail" endpoint
+
+	filename, err := base64.RawURLEncoding.DecodeString(strings.Join(parts[1:], "/"))
+	if err != nil {
+		return opts, errors.New("Invalid filename encoding")
+	}
+	opts.SourceURL = string(filename);
+	if _, err = url.ParseRequestURI(opts.SourceURL); err != nil {
+		return opts, errors.New("Invalid media url")
+	}
+
+	query, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		return opts, errors.New("Invalid query string")
+	}
+
+	if opts.Width, err = strconv.Atoi(query.Get("w")); err != nil {
+		return opts, fmt.Errorf("Invalid width: %s", query.Get("w"))
+	}
+
+	if opts.Height, err = strconv.Atoi(query.Get("h")); err != nil {
+		return opts, fmt.Errorf("Invalid height: %s", query.Get("h"))
+	}
+
+	if opts.Width > conf.MaxDimension || opts.Height > conf.MaxDimension {
+		return opts, errors.New("Requested size is too big")
+	}
+
+	if opts.Width * opts.Height > conf.MaxResolution {
+		return opts, errors.New("Requested size is too big")
+	}
+
+	return opts, nil
+}
+
+func parseLegacyOptions(r *http.Request) (string, processingOptions, error) {
 	var po processingOptions
 	var err error
 
@@ -43,10 +122,10 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 	if r, ok := processingMethods[parts[1]]; ok {
 		po.Method = r
 	} else {
-		return "", po, fmt.Errorf("Invalid resize type: %s", parts[1])
+		return "", po, fmt.Errorf("Invalid transformation type: %s", parts[1])
 	}
 
-	// path parts 2-4 correspond to obsolete image transformation options (width, height, enlarge)
+	// path part 2-4 corresponds to obsolete image transformation options (width, height, enlarge)
 
 	if po.Index, err = strconv.Atoi(parts[5]); err != nil {
 		return "", po, fmt.Errorf("Invalid index: %s", parts[5])
@@ -56,9 +135,6 @@ func parsePath(r *http.Request) (string, processingOptions, error) {
 	if err != nil {
 		return "", po, errors.New("Invalid filename encoding")
 	}
-
-	// always output PNGs for now (this applies to extracted pages from PDFs)
-	po.Format = "image/png"
 
 	return string(filename), po, nil
 }
@@ -104,11 +180,11 @@ func addCacheControlHeadersIfMissing(header http.Header) {
 	}
 }
 
-func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, mediaURL string, po processingOptions, duration time.Duration) {
+func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, data []byte, mediaURL string, mimeType string, duration time.Duration) {
 	gzipped := strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") && conf.GZipCompression > 0
 
 	addCacheControlHeadersIfMissing(rw.Header())
-	rw.Header().Set("Content-Type", po.Format)
+	rw.Header().Set("Content-Type", mimeType)
 
 	dataToRespond := data
 
@@ -129,7 +205,7 @@ func respondWithMedia(reqID string, r *http.Request, rw http.ResponseWriter, dat
 	rw.WriteHeader(200)
 	rw.Write(dataToRespond)
 
-	logResponse(200, fmt.Sprintf("[%s] Processed in %s: %s; %+v", reqID, duration, mediaURL, po))
+	logResponse(200, fmt.Sprintf("[%s] Processed in %s: %s; %+v", reqID, duration, mediaURL, r.URL))
 }
 
 func respondWithError(reqID string, rw http.ResponseWriter, err farsparkError) {
@@ -191,16 +267,47 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mediaURL, procOpt, err := parsePath(r)
+	endpoint, err := parseEndpoint(r);
 	if err != nil {
-		panic(newError(404, err.Error(), "Invalid media url"))
+		panic(newError(404, err.Error(), "Invalid endpoint specified"))
 	}
 
-	if _, err = url.ParseRequestURI(mediaURL); err != nil {
-		panic(newError(404, err.Error(), "Invalid media url"))
-	}
+	switch endpoint {
+	case Thumbnail:
+		opts, err := parseThumbnailOptions(r)
+		if err != nil {
+			panic(newError(400, fmt.Sprintf("Error: %+v", err), "Error parsing options"))
+		}
 
-	if procOpt.Method == Extract {
+		if r.Method != http.MethodGet {
+			panic(invalidMethodErr)
+		}
+		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
+		tThumbnail := stats.NewTiming()
+
+		imageBytes, imageMimeType, err := downloadMedia(opts.SourceURL)
+		if err != nil {
+			panic(newError(404, fmt.Sprintf("Error: %+v", err), "Media is unreachable"))
+		}
+
+		outputBytes, err := processImage(imageBytes, imageMimeType, opts.Width, opts.Height, t)
+		if err != nil {
+			stats.Increment("farspark.thumbnail_errors")
+			panic(newError(500, fmt.Sprintf("Error: %+v", err), "Error occurred while generating thumbnail"))
+		}
+		t.Check()
+
+		writeCORS(r, rw)
+
+		respondWithMedia(reqID, r, rw, outputBytes, opts.SourceURL, imageMimeType, t.Since())
+		stats.Increment("farspark.thumbnail_ok")
+		tThumbnail.Send("farspark.thumbnail_time")
+
+	case Extract:
+		mediaURL, procOpt, err := parseLegacyOptions(r)
+		if err != nil {
+			panic(newError(400, err.Error(), "Error parsing options"))
+		}
 
 		if r.Method != http.MethodGet {
 			panic(invalidMethodErr)
@@ -208,6 +315,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 		var b []byte = nil
 		var maxIndex int
+		outputMimeType := "image/png"
 
 		t := startTimer(time.Duration(conf.WriteTimeout)*time.Second, "Processing")
 		tProcess := stats.NewTiming()
@@ -237,7 +345,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 			t.Check()
 
-			processedBytes, processedMaxIndex, err := extractPDFPage(downloadBytes, mediaURL, procOpt)
+			processedBytes, processedMaxIndex, err := extractPDFPage(downloadBytes, mediaURL, procOpt.Index, outputMimeType)
 
 			if err != nil {
 				stats.Increment("farspark.process_errors")
@@ -257,10 +365,15 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			rw.Header().Set("X-Max-Content-Index", strconv.Itoa(maxIndex))
 		}
 
-		respondWithMedia(reqID, r, rw, b, mediaURL, procOpt, t.Since())
+		respondWithMedia(reqID, r, rw, b, mediaURL, outputMimeType, t.Since())
 		stats.Increment("farspark.process_ok")
 		tProcess.Send("farspark.process_time")
-	} else {
+	case Raw:
+		mediaURL, _, err := parseLegacyOptions(r)
+		if err != nil {
+			panic(newError(400, err.Error(), "Error parsing options"))
+		}
+
 		tRaw := stats.NewTiming()
 		res, err := streamMedia(mediaURL, r)
 
