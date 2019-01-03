@@ -37,10 +37,10 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 	imgWidth := header.Width()
 	imgHeight := header.Height()
 
-	if imgWidth > conf.MaxSrcDimension || imgHeight > conf.MaxSrcDimension {
+	if imgWidth > conf.MaxDimension || imgHeight > conf.MaxDimension {
 		return nil, errors.New("Source image is too big")
 	}
-	if imgWidth*imgHeight > conf.MaxSrcResolution {
+	if imgWidth * imgHeight > conf.MaxResolution {
 		return nil, errors.New("Source image is too big")
 	}
 	t.Check()

@@ -63,8 +63,8 @@ type config struct {
 	MaxClients      int
 	TTL             int
 
-	MaxSrcDimension  int
-	MaxSrcResolution int
+	MaxDimension  int
+	MaxResolution int
 
 	GZipCompression int
 
@@ -83,8 +83,8 @@ var conf = config{
 	DownloadTimeout:  5,
 	Concurrency:      runtime.NumCPU() * 2,
 	TTL:              3600,
-	MaxSrcDimension:  8192,
-	MaxSrcResolution: 16800000,
+	MaxDimension:     8192,
+	MaxResolution:    16800000, // a bit more than 4k x 4k
 	GZipCompression:  5,
 }
 
@@ -118,8 +118,8 @@ func init() {
 
 	intEnvConfig(&conf.TTL, "FARSPARK_TTL")
 
-	intEnvConfig(&conf.MaxSrcDimension, "FARSPARK_MAX_SRC_DIMENSION")
-	megaIntEnvConfig(&conf.MaxSrcResolution, "FARSPARK_MAX_SRC_RESOLUTION")
+	intEnvConfig(&conf.MaxDimension, "FARSPARK_MAX_DIMENSION")
+	megaIntEnvConfig(&conf.MaxResolution, "FARSPARK_MAX_RESOLUTION")
 
 	intEnvConfig(&conf.GZipCompression, "FARSPARK_GZIP_COMPRESSION")
 
@@ -158,12 +158,12 @@ func init() {
 		log.Fatalf("TTL should be greater than 0, now - %d\n", conf.TTL)
 	}
 
-	if conf.MaxSrcDimension <= 0 {
-		log.Fatalf("Max src dimension should be greater than 0, now - %d\n", conf.MaxSrcDimension)
+	if conf.MaxDimension <= 0 {
+		log.Fatalf("Max dimension should be greater than 0, now - %d\n", conf.MaxDimension)
 	}
 
-	if conf.MaxSrcResolution <= 0 {
-		log.Fatalf("Max src resolution should be greater than 0, now - %d\n", conf.MaxSrcResolution)
+	if conf.MaxResolution <= 0 {
+		log.Fatalf("Max resolution should be greater than 0, now - %d\n", conf.MaxResolution)
 	}
 
 	if conf.GZipCompression < 0 {
