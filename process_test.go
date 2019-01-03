@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"testing"
+	"time"
 )
 
 const dataDir = "testdata"
@@ -22,11 +23,22 @@ func loadTestData(t *testing.T, inFile string, outFile string) ([]byte, []byte) 
 	return in, out
 }
 
+func Test_thumbnail(t *testing.T) {
+	in, out := loadTestData(t, "in0.png", "out0.png")
+	timer := startTimer(time.Duration(1) * time.Second, "Processing")
+	result, err := processImage(in, "image/png", 500, 100, timer)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(out, result) {
+		t.Fatal("Unexpected output.")
+	}
+}
+
 func Test_PDF_PNG(t *testing.T) {
 	in, out := loadTestData(t, "in1.pdf", "out1.png")
 	result, _, err := extractPDFPage(in, "dummy", 3, "image/png")
-
-	ioutil.WriteFile("out.png", result, 0600);
 
 	if err != nil {
 		t.Fatal(err)
