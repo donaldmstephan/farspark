@@ -24,8 +24,9 @@ func loadTestData(t *testing.T, inFile string, outFile string) ([]byte, []byte) 
 
 func Test_PDF_PNG(t *testing.T) {
 	in, out := loadTestData(t, "in1.pdf", "out1.png")
-	po := processingOptions{Method: Extract, Format: "image/png", Index: 3}
-	result, _, err := extractPDFPage(in, "dummy", po)
+	result, _, err := extractPDFPage(in, "dummy", 3, "image/png")
+
+	ioutil.WriteFile("out.png", result, 0600);
 
 	if err != nil {
 		t.Fatal(err)
