@@ -276,7 +276,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	case Thumbnail:
 		opts, err := parseThumbnailOptions(r)
 		if err != nil {
-			panic(newError(404, fmt.Sprintf("Error: %+v", err), "Error parsing options"))
+			panic(newError(400, fmt.Sprintf("Error: %+v", err), "Error parsing options"))
 		}
 
 		if r.Method != http.MethodGet {
@@ -306,7 +306,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	case Extract:
 		mediaURL, procOpt, err := parseLegacyOptions(r)
 		if err != nil {
-			panic(newError(500, err.Error(), "Error parsing options"))
+			panic(newError(400, err.Error(), "Error parsing options"))
 		}
 
 		if r.Method != http.MethodGet {
@@ -371,7 +371,7 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	case Raw:
 		mediaURL, _, err := parseLegacyOptions(r)
 		if err != nil {
-			panic(newError(500, err.Error(), "Error parsing options"))
+			panic(newError(400, err.Error(), "Error parsing options"))
 		}
 
 		tRaw := stats.NewTiming()
