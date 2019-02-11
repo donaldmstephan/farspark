@@ -8,7 +8,12 @@ pkg_maintainer="Mozilla Mixed Reality <mixreality@mozilla.com>"
 pkg_license=("MIT")
 pkg_source="https://github.com/MozillaReality/farspark"
 pkg_bin_dirs=(bin)
-pkg_deps=(core/glibc core/gcc-libs core/bash mozillareality/ghostscript)
+# versions are pinned for convenience building with Habitat, not because we give a crap about
+# having these versions in particular -- latest versions of everything should be sufficient
+pkg_deps=(core/glibc/2.27/20180608041157
+          core/gcc-libs/7.3.0/20180608091701
+          core/bash/4.4.19/20180608092913
+          mozillareality/ghostscript)
 pkg_build_deps=(mozillareality/ghostscript)
 pkg_scaffolding=core/scaffolding-go
 scaffolding_go_base_path=github.com/MozillaReality/farspark

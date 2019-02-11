@@ -10,12 +10,14 @@ type OutputBuffer struct {
 }
 
 var EncodeOptions = map[mimeType]map[int]int{
+	"image/gif": map[int]int{},
 	"image/jpeg": map[int]int{lilliput.JpegQuality: 85},
 	"image/png":  map[int]int{lilliput.PngCompression: 7},
 }
 
 // Map from output media type to Lilliput output file type identifier.
 var outputFileTypes = map[mimeType]string{
+	"image/gif": ".gif",
 	"image/jpeg": ".jpeg",
 	"image/png":  ".png",
 }
