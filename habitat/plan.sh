@@ -15,7 +15,7 @@ pkg_deps=(core/glibc/2.27/20180608041157
           core/bash/4.4.19/20180608092913
           mozillareality/ghostscript)
 pkg_build_deps=(mozillareality/ghostscript)
-pkg_scaffolding=core/scaffolding-go
+pkg_scaffolding=core/scaffolding-go/0.1.0/20181218162103
 scaffolding_go_base_path=github.com/MozillaReality/farspark
 scaffolding_go_build_deps=()
 
