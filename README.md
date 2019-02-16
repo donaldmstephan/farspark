@@ -1,6 +1,6 @@
 # farspark
 
-farspark is a fast and secure standalone server, based on [imgproxy](https://github.com/DarthSim/imgproxy), for transforming and proxying remote media. The main principles of are simplicity, speed, and security. farspark is used with [hubs](https://github.com/mozilla/hubs) in order to proxy and convert shared media assets such as images, videos, PDF files, and GLTF assets.
+farspark is a fast and secure standalone server, based on [imgproxy](https://github.com/DarthSim/imgproxy), for transforming and proxying remote media. farspark is used with [hubs](https://github.com/mozilla/hubs) in order to proxy and convert shared media assets such as images, videos, PDF files, and GLTF assets.
 
 ## Installation
 
