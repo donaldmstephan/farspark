@@ -95,6 +95,10 @@ func parseThumbnailOptions(r *http.Request) (thumbnailOptions, error) {
 		return opts, fmt.Errorf("Invalid height: %s", query.Get("h"))
 	}
 
+	if opts.Width <= 0 || opts.Height <= 0 {
+		return opts, errors.New("Requested size must be >0")
+	}
+
 	if opts.Width > conf.MaxDimension || opts.Height > conf.MaxDimension {
 		return opts, errors.New("Requested size is too big")
 	}
