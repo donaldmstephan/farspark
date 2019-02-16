@@ -1,33 +1,33 @@
-hash: 6e8fd5bae50ebad32aacbd393d744be7f1336fe1e0df5c48f04d41f63cec074c
-updated: 2018-10-09T23:35:53.770674567Z
+hash: 02acd13bd21b74352209a474e20b9c53433deb80feb9930a283ab0e300a3ec4c
+updated: 2019-02-15T17:11:04.243110698-08:00
 imports:
-- name: github.com/discordapp/lilliput
-  version: e611eea2a29a12d1363b5ceb31d3af3ef4012e9c
 - name: github.com/gfodor/go-ghostscript
-  version: 8648f5db343bf62db895270e114d098fa1685949
+  version: 0df8f334a87e0453561a439eae27c19e33d37bd0
   subpackages:
   - ghostscript
 - name: github.com/google/btree
-  version: e89373fe6b4a7413d7acd6da1725b83ef713e6e4
+  version: 4030bb1f1f0c35b30ca7009e9ebd06849dd45306
 - name: github.com/matoous/go-nanoid
-  version: 958d370425a1ea42a4dd3c67d15bf02554a16b82
+  version: eab626deece6c9806cfbe2290859eb31a934edb0
+- name: github.com/mqp/lilliput
+  version: 3725bd1f1842d57d53b9e4bcef46fe9295a1da4b
 - name: github.com/peterbourgon/diskv
   version: 0646ccaebea1ed1539efcab30cae44019090093f
 - name: golang.org/x/image
-  version: 334384d9e19178a0488c9360d94d183c1ef0f711
+  version: ef4a1470e0dc5915f2f5fa04a28eeab72c6936a4
   subpackages:
   - riff
   - vp8
   - vp8l
   - webp
 - name: golang.org/x/net
-  version: 0a9397675ba34b2845f758fe3cd68828369c6517
+  version: 3a22650c66bd7f4fb6d1e8072ffd7b75c8a27898
   subpackages:
   - netutil
 - name: gopkg.in/alexcesaro/statsd.v2
   version: 7fea3f0d2fab1ad973e641e51dba45443a311a90
 - name: gopkg.in/yaml.v2
-  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+  version: 51d6538a90f86fe93ac480b35f37b2be17fef232
 - name: rsc.io/pdf
   version: c47d69cf462f804ff58ca63c61a8fb2aed76587e
 testImports: []
