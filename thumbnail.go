@@ -1,7 +1,7 @@
 package main
 import (
 	"errors"
-	"github.com/discordapp/lilliput"
+	"github.com/mqp/lilliput"
 )
 
 type OutputBuffer struct {
