@@ -49,8 +49,8 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 
 	var outputBuffer *OutputBuffer
 	select {
-	case outputBuffer = <-outputBufferPool:
-	default:
+	case outputBuffer = <-outputBufferPool: // acquire from pool
+	default: // pool is empty, create one
 		outputBuffer = &OutputBuffer{
 			buf: make([]byte, 50*1024*1024),
 			ops: lilliput.NewImageOps(8192),
@@ -58,12 +58,14 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 	}
 	t.Check()
 
-	ops := outputBuffer.ops
-	outputImg := outputBuffer.buf
 	defer func() {
-		ops.Clear()
-		outputBufferPool <- outputBuffer
+		outputBuffer.ops.Clear()
+		select {
+		case outputBufferPool <- outputBuffer: // release into pool
+		default: // pool is full, throw out this one
+		}
 	}()
+
 	opts := &lilliput.ImageOptions{
 		FileType:             outputFileTypes[outputFormat],
 		Width:                width,
@@ -72,10 +74,5 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 		NormalizeOrientation: true,
 		EncodeOptions:        EncodeOptions[outputFormat],
 	}
-	if outputImg, err = ops.Transform(decoder, opts, outputImg); err != nil {
-		return nil, err
-	}
-	t.Check()
-
-	return outputImg, nil
+	return outputBuffer.ops.Transform(decoder, opts, outputBuffer.buf)
 }
