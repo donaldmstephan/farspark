@@ -4,8 +4,6 @@ bind = ""
 read_timeout = ""
 write_timeout = ""
 download_timeout = ""
-concurrency = ""
-max_clients = ""
 ttl = ""
 
 [security]

@@ -22,7 +22,7 @@ var outputFileTypes = map[mimeType]string{
 	"image/png":  ".png",
 }
 
-var outputBufferPool = make(chan *OutputBuffer, conf.Concurrency)
+var outputBufferPool = make(chan *OutputBuffer)
 
 func processImage(data []byte, outputFormat mimeType, width int, height int, t *timer) ([]byte, error) {
 	decoder, err := lilliput.NewDecoder(data)
