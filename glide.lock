@@ -1,5 +1,5 @@
-hash: 02acd13bd21b74352209a474e20b9c53433deb80feb9930a283ab0e300a3ec4c
-updated: 2019-02-15T17:11:04.243110698-08:00
+hash: 7b525f2b9dc55b7dd17aa1889aee5acc608450b0a9ee751952464e3d6adeb5a1
+updated: 2019-02-19T16:02:32.435327114-08:00
 imports:
 - name: github.com/gfodor/go-ghostscript
   version: 0df8f334a87e0453561a439eae27c19e33d37bd0
@@ -20,10 +20,6 @@ imports:
   - vp8
   - vp8l
   - webp
-- name: golang.org/x/net
-  version: 3a22650c66bd7f4fb6d1e8072ffd7b75c8a27898
-  subpackages:
-  - netutil
 - name: gopkg.in/alexcesaro/statsd.v2
   version: 7fea3f0d2fab1ad973e641e51dba45443a311a90
 - name: gopkg.in/yaml.v2

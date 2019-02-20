@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 )
@@ -59,8 +58,6 @@ type config struct {
 	WaitTimeout     int
 	WriteTimeout    int
 	DownloadTimeout int
-	Concurrency     int
-	MaxClients      int
 	TTL             int
 
 	MaxDimension  int
@@ -81,7 +78,6 @@ var conf = config{
 	ReadTimeout:      10,
 	WriteTimeout:     10,
 	DownloadTimeout:  5,
-	Concurrency:      runtime.NumCPU() * 2,
 	TTL:              3600,
 	MaxDimension:     8192,
 	MaxResolution:    16800000, // a bit more than 4k x 4k
@@ -113,8 +109,6 @@ func init() {
 	intEnvConfig(&conf.ReadTimeout, "FARSPARK_READ_TIMEOUT")
 	intEnvConfig(&conf.WriteTimeout, "FARSPARK_WRITE_TIMEOUT")
 	intEnvConfig(&conf.DownloadTimeout, "FARSPARK_DOWNLOAD_TIMEOUT")
-	intEnvConfig(&conf.Concurrency, "FARSPARK_CONCURRENCY")
-	intEnvConfig(&conf.MaxClients, "FARSPARK_MAX_CLIENTS")
 
 	intEnvConfig(&conf.TTL, "FARSPARK_TTL")
 
@@ -144,14 +138,6 @@ func init() {
 
 	if conf.DownloadTimeout <= 0 {
 		log.Fatalf("Download timeout should be greater than 0, now - %d\n", conf.DownloadTimeout)
-	}
-
-	if conf.Concurrency <= 0 {
-		log.Fatalf("Concurrency should be greater than 0, now - %d\n", conf.Concurrency)
-	}
-
-	if conf.MaxClients <= 0 {
-		conf.MaxClients = conf.Concurrency * 10
 	}
 
 	if conf.TTL <= 0 {

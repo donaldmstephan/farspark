@@ -45,12 +45,10 @@ type thumbnailOptions struct {
 	Height    int
 }
 
-type httpHandler struct {
-	sem chan struct{}
-}
+type httpHandler struct {}
 
 func newHTTPHandler() *httpHandler {
-	return &httpHandler{make(chan struct{}, conf.Concurrency)}
+	return &httpHandler{}
 }
 
 func parseEndpoint(r *http.Request) (processingMethod, error) {
@@ -219,14 +217,6 @@ func respondWithError(reqID string, rw http.ResponseWriter, err farsparkError) {
 	rw.Write([]byte(err.PublicMessage))
 }
 
-func (h *httpHandler) lock() {
-	h.sem <- struct{}{}
-}
-
-func (h *httpHandler) unlock() {
-	<-h.sem
-}
-
 func copyHeader(dst, src http.Header) {
 	for k, vv := range src {
 		if k == "set-cookie" || k == "set-cookie2" || strings.HasPrefix(k, "x-amz") || strings.HasPrefix(k, "X-Amz") {
@@ -261,9 +251,6 @@ func (h *httpHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead && r.Method != http.MethodOptions {
 		panic(invalidMethodErr)
 	}
-
-	h.lock()
-	defer h.unlock()
 
 	if r.URL.Path == "/health" {
 		rw.WriteHeader(200)

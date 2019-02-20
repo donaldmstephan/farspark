@@ -8,8 +8,6 @@ import (
 	"os/signal"
 	"runtime/debug"
 	"time"
-
-	"golang.org/x/net/netutil"
 )
 
 func main() {
@@ -27,7 +25,7 @@ func main() {
 
 	s := &http.Server{
 		Handler:        newHTTPHandler(),
-		ReadTimeout:    time.Duration(conf.ReadTimeout) * time.Second,
+		ReadTimeout:    time.Duration(1) * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
@@ -36,7 +34,7 @@ func main() {
 
 	go func() {
 		log.Printf("Starting server at %s\n", conf.Bind)
-		log.Fatal(s.Serve(netutil.LimitListener(l, conf.MaxClients)))
+		log.Fatal(s.Serve(l))
 	}()
 
 	<-stop
