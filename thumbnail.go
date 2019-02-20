@@ -22,7 +22,9 @@ var outputFileTypes = map[mimeType]string{
 	"image/png":  ".png",
 }
 
-var outputBufferPool = make(chan *OutputBuffer)
+// 6 is a very common concurrency level, since Chrome and Firefox make 6
+// concurrent requests at once, so it's nice if our pool retains that many
+var outputBufferPool = make(chan *OutputBuffer, 6)
 
 func processImage(data []byte, outputFormat mimeType, width int, height int, t *timer) ([]byte, error) {
 	decoder, err := lilliput.NewDecoder(data)
@@ -42,9 +44,6 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 	if imgWidth > conf.MaxDimension || imgHeight > conf.MaxDimension {
 		return nil, errors.New("Source image is too big")
 	}
-	if imgWidth * imgHeight > conf.MaxResolution {
-		return nil, errors.New("Source image is too big")
-	}
 	t.Check()
 
 	var outputBuffer *OutputBuffer
@@ -53,7 +52,7 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 	default: // pool is empty, create one
 		outputBuffer = &OutputBuffer{
 			buf: make([]byte, 50*1024*1024),
-			ops: lilliput.NewImageOps(8192),
+			ops: lilliput.NewImageOps(conf.MaxDimension),
 		}
 	}
 	t.Check()
