@@ -79,8 +79,7 @@ var conf = config{
 	WriteTimeout:     10,
 	DownloadTimeout:  5,
 	TTL:              3600,
-	MaxDimension:     8192,
-	MaxResolution:    16800000, // a bit more than 4k x 4k
+	MaxDimension:     2048,
 	GZipCompression:  5,
 }
 
@@ -113,7 +112,6 @@ func init() {
 	intEnvConfig(&conf.TTL, "FARSPARK_TTL")
 
 	intEnvConfig(&conf.MaxDimension, "FARSPARK_MAX_DIMENSION")
-	megaIntEnvConfig(&conf.MaxResolution, "FARSPARK_MAX_RESOLUTION")
 
 	intEnvConfig(&conf.GZipCompression, "FARSPARK_GZIP_COMPRESSION")
 
@@ -146,10 +144,6 @@ func init() {
 
 	if conf.MaxDimension <= 0 {
 		log.Fatalf("Max dimension should be greater than 0, now - %d\n", conf.MaxDimension)
-	}
-
-	if conf.MaxResolution <= 0 {
-		log.Fatalf("Max resolution should be greater than 0, now - %d\n", conf.MaxResolution)
 	}
 
 	if conf.GZipCompression < 0 {
