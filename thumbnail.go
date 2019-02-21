@@ -22,9 +22,9 @@ var outputFileTypes = map[mimeType]string{
 	"image/png":  ".png",
 }
 
-// 6 is a very common concurrency level, since Chrome and Firefox make 6
-// concurrent requests at once, so it's nice if our pool retains that many
-var outputBufferPool = make(chan *OutputBuffer, 6)
+// Our in-world GIF search shows up to 25 GIF results at once,
+// so it's nice if our pool retains that many buffers
+var outputBufferPool = make(chan *OutputBuffer, 25)
 
 func processImage(data []byte, outputFormat mimeType, width int, height int, t *timer) ([]byte, error) {
 	decoder, err := lilliput.NewDecoder(data)
@@ -46,12 +46,18 @@ func processImage(data []byte, outputFormat mimeType, width int, height int, t *
 	}
 	t.Check()
 
+	// kind of hacky, but let's assume that the maximum output size is that of an
+	// uncompressed 24-bit RGBA image at the maximum dimension -- that should handle
+	// all JPEGs and PNGs, and there has to be some limit on how gigantic a GIF we
+	// are expected to process
+	maxOutputSize := conf.MaxDimension * conf.MaxDimension * 4
+
 	var outputBuffer *OutputBuffer
 	select {
 	case outputBuffer = <-outputBufferPool: // acquire from pool
 	default: // pool is empty, create one
 		outputBuffer = &OutputBuffer{
-			buf: make([]byte, 50*1024*1024),
+			buf: make([]byte, maxOutputSize),
 			ops: lilliput.NewImageOps(conf.MaxDimension),
 		}
 	}
